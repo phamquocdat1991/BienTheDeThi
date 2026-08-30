@@ -1,0 +1,6 @@
+{
+  "name": "AI Biến Thể Đề Thi 3 Cấp Độ",
+  "description": "Ứng dụng AI chuyên dụng hỗ trợ giáo viên phân tích đề gốc và tuần tự tạo 3 cấp độ đề thi biến thể chuẩn sư phạm.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
