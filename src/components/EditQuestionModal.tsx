@@ -18,6 +18,7 @@ import {
   ApiConfig,
 } from '../types';
 import { fixSingleQuestionWithAI } from '../services/geminiService';
+import { validateQuestions, pendingValidation } from '../utils/examIntegrity';
 import { MathContent } from './MathContent';
 
 interface EditQuestionModalProps {
@@ -95,7 +96,8 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
   };
 
   const handleSave = () => {
-    onSaveQuestion(editedQuestion);
+    try { validateQuestions([editedQuestion]); } catch (error) { setErrorMessage(error instanceof Error ? error.message : 'Câu hỏi không hợp lệ.'); return; }
+    onSaveQuestion(editedQuestion, pendingValidation(editedQuestion, 'Nội dung đã chỉnh sửa. Giáo viên cần rà soát lại trước khi sử dụng.'));
     onClose();
   };
 
@@ -105,7 +107,7 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
         {/* Modal Header */}
         <div className="bg-[#1E293B] text-white p-6 flex items-start justify-between border-b border-[#334155]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0284C7] flex items-center justify-center text-white shadow-inner">
+            <div className="w-10 h-10 rounded-2xl bg-[#4F46E5] flex items-center justify-center text-white shadow-inner">
               <Edit3 className="w-5 h-5" />
             </div>
             <div>
@@ -129,9 +131,9 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
           {/* AI Assistance Box */}
-          <div className="p-4 rounded-2xl bg-[#F0F9FF] border border-[#BAE6FD] space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#0369A1]">
-              <Sparkles className="w-4 h-4 text-[#0284C7]" />
+          <div className="p-4 rounded-2xl bg-[#EEF2FF] border border-[#C7D2FE] space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#4338CA]">
+              <Sparkles className="w-4 h-4 text-[#4F46E5]" />
               <span>Yêu cầu AI Tự Giải Lại & Sửa Câu Này (Tùy chọn):</span>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -140,13 +142,13 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
                 value={teacherNote}
                 onChange={(e) => setTeacherNote(e.target.value)}
                 placeholder="VD: Đổi số liệu câu này cho chẵn hơn, hoặc đổi phương án nhiễu C..."
-                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20"
+                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-800 focus:outline-hidden focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20"
               />
               <button
                 type="button"
                 onClick={handleAiFix}
                 disabled={isAiFixing}
-                className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shrink-0 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white font-bold text-xs shrink-0 transition disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 {isAiFixing ? (
                   <>
@@ -185,7 +187,7 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
               <button
                 type="button"
                 onClick={() => setPreviewMode(!previewMode)}
-                className="text-[11px] font-bold text-[#0284C7] hover:underline"
+                className="text-[11px] font-bold text-[#4F46E5] hover:underline"
               >
                 {previewMode ? 'Chuyển sang chế độ soạn thảo' : 'Xem trước công thức'}
               </button>
@@ -202,7 +204,7 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
                   setEditedQuestion({ ...editedQuestion, questionText: e.target.value })
                 }
                 rows={4}
-                className="w-full p-3 rounded-xl border border-slate-300 font-sans text-xs focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20"
+                className="w-full p-3 rounded-xl border border-slate-300 font-sans text-xs focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20"
               />
             )}
           </div>
@@ -221,7 +223,7 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
                       type="text"
                       value={opt.text}
                       onChange={(e) => handleOptionChange(idx, e.target.value)}
-                      className="flex-1 p-2 rounded-lg border border-slate-300 text-xs focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20"
+                      className="flex-1 p-2 rounded-lg border border-slate-300 text-xs focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20"
                     />
                   </div>
                 ))}
@@ -285,7 +287,7 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
                 setEditedQuestion({ ...editedQuestion, explanation: e.target.value })
               }
               rows={3}
-              className="w-full p-3 rounded-xl border border-slate-300 font-sans text-xs focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20"
+              className="w-full p-3 rounded-xl border border-slate-300 font-sans text-xs focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20"
             />
           </div>
         </div>
@@ -303,7 +305,7 @@ export const EditQuestionModal: React.FC<EditQuestionModalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow-md shadow-[#0284C7]/20 transition cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold shadow-md shadow-[#4F46E5]/20 transition cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>Lưu Thay Đổi Câu Hỏi</span>

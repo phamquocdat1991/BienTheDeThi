@@ -84,7 +84,7 @@ export const ShuffleModal: React.FC<ShuffleModalProps> = ({ isOpen, onClose, exa
                 onClick={() => setActiveCode(c.code)}
                 className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
                   activeCode === c.code
-                    ? 'bg-[#0284C7] text-white shadow-xs'
+                    ? 'bg-[#4F46E5] text-white shadow-xs'
                     : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-300'
                 }`}
               >

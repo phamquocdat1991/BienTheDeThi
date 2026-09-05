@@ -63,6 +63,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     setImportError(null);
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    if(file.size > 20 * 1024 * 1024) { setImportError("Tệp sao lưu vượt quá 20 MB."); return; }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -102,6 +104,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
           <button
             onClick={onClose}
+            aria-label="Đóng lịch sử"
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -157,11 +160,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                   onRestoreSession(item.session);
                   onClose();
                 }}
-                className="group p-4 rounded-2xl border border-slate-200 hover:border-[#0284C7] bg-white hover:bg-sky-50/40 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer"
+                className="group p-4 rounded-2xl border border-slate-200 hover:border-[#4F46E5] bg-white hover:bg-sky-50/40 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer"
               >
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#0284C7]/15 text-[#0369A1]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#4F46E5]/15 text-[#4338CA]">
                       {item.subject} • {item.grade}
                     </span>
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -180,7 +183,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     </span>
                   </div>
 
-                  <h4 className="text-sm font-bold text-slate-900 truncate group-hover:text-[#0284C7] transition">
+                  <h4 className="text-sm font-bold text-slate-900 truncate group-hover:text-[#4F46E5] transition">
                     {item.title}
                   </h4>
                   <p className="text-xs text-slate-500">
@@ -211,7 +214,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                       onRestoreSession(item.session);
                       onClose();
                     }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow-xs transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold shadow-xs transition"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Mở Lại</span>
@@ -226,6 +229,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
           <button
             onClick={onClose}
+            aria-label="Đóng lịch sử"
             className="px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
           >
             Đóng

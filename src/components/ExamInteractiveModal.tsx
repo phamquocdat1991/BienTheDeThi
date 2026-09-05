@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { GeneratedExam, VariantQuestion } from '../types';
+import { scorePractice } from '../utils/examIntegrity';
 import { MathContent } from './MathContent';
 
 interface ExamInteractiveModalProps {
@@ -43,12 +44,13 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
 
   // Khởi tạo timer khi mở modal
   useEffect(() => {
-    if (isOpen && !isSubmitted) {
+    if (isOpen) {
       setTimeRemainingSeconds((exam.metadata?.durationMinutes || 45) * 60);
       setSelectedAnswers({});
       setCurrentIndex(0);
       setIsSubmitted(false);
       setShowConfirmSubmit(false);
+      setFilterMode('all');
     }
   }, [isOpen, exam]);
 
@@ -63,7 +65,8 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
       setTimeRemainingSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
-          handleAutoSubmit();
+          setIsSubmitted(true);
+          setShowConfirmSubmit(false);
           return 0;
         }
         return prev - 1;
@@ -75,10 +78,18 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
     };
   }, [isOpen, isSubmitted]);
 
+  useEffect(() => {
+    if (isSubmitted && scorePractice(exam.questions, selectedAnswers).score! >= 7 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      confetti({particleCount:60,spread:60,origin:{y:0.6}});
+    }
+  }, [isSubmitted]);
+
   if (!isOpen) return null;
 
   const totalQuestions = exam.questions.length;
-  const currentQuestion: VariantQuestion | undefined = exam.questions[currentIndex];
+  const visibleIndexes = exam.questions.flatMap((q, idx) => !isSubmitted || filterMode === 'all' || (q.type === 'multiple_choice' && Boolean(selectedAnswers[q.number]) && selectedAnswers[q.number].trim().toUpperCase() !== q.correctAnswer.trim().toUpperCase()) ? [idx] : []);
+  const visibleIndex = visibleIndexes.includes(currentIndex) ? currentIndex : visibleIndexes[0];
+  const currentQuestion: VariantQuestion | undefined = exam.questions[visibleIndex];
 
   const handleSelectOption = (questionNumber: number, optionLabel: string) => {
     if (isSubmitted) return;
@@ -88,42 +99,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
     }));
   };
 
-  const handleAutoSubmit = () => {
-    setIsSubmitted(true);
-    triggerConfettiIfPassed();
-  };
-
-  const handleSubmitExam = () => {
-    setShowConfirmSubmit(false);
-    setIsSubmitted(true);
-    triggerConfettiIfPassed();
-  };
-
-  const triggerConfettiIfPassed = () => {
-    // Tính điểm
-    let correctCount = 0;
-    exam.questions.forEach((q) => {
-      if (
-        selectedAnswers[q.number] &&
-        selectedAnswers[q.number].trim().toUpperCase() === q.correctAnswer.trim().toUpperCase()
-      ) {
-        correctCount++;
-      }
-    });
-
-    const score = Math.round((correctCount / totalQuestions) * 10 * 10) / 10;
-    if (score >= 7.0) {
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-      } catch (e) {
-        // Im lặng nếu confetti không hỗ trợ
-      }
-    }
-  };
+  const handleSubmitExam = () => { setShowConfirmSubmit(false); setIsSubmitted(true); };
 
   // Tính toán kết quả
   const answeredCount = Object.keys(selectedAnswers).length;
@@ -134,10 +110,10 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
     const userAnswer = selectedAnswers[q.number];
     const isAnswered = Boolean(userAnswer);
     const isCorrect =
-      isAnswered && userAnswer.trim().toUpperCase() === q.correctAnswer.trim().toUpperCase();
+      q.type === 'multiple_choice' && isAnswered && userAnswer.trim().toUpperCase() === q.correctAnswer.trim().toUpperCase();
 
     if (isCorrect) correctCount++;
-    else if (isAnswered) wrongCount++;
+    else if (isAnswered && q.type === 'multiple_choice') wrongCount++;
 
     return {
       question: q,
@@ -147,7 +123,8 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
     };
   });
 
-  const finalScore = Math.round((correctCount / totalQuestions) * 10 * 10) / 10;
+  const practiceScore = scorePractice(exam.questions, selectedAnswers);
+  const finalScore = practiceScore.score;
 
   // Format thời gian
   const minutes = Math.floor(timeRemainingSeconds / 60);
@@ -160,13 +137,13 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
         {/* Top bar: Exam Info & Timer */}
         <div className="bg-[#1E293B] text-white px-6 py-4 flex items-center justify-between border-b border-[#334155] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0284C7] flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-[#4F46E5] flex items-center justify-center text-white font-bold">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white truncate max-w-md">{exam.title}</h3>
-                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/30">
+                <h3 className="text-sm font-bold text-white truncate max-w-[150px] sm:max-w-md">{exam.title}</h3>
+                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#4F46E5]/20 text-[#A5B4FC] border border-[#4F46E5]/30">
                   Cấp độ {exam.level}
                 </span>
               </div>
@@ -200,6 +177,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
 
             <button
               onClick={onClose}
+              aria-label="Đóng thi thử"
               className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -222,7 +200,8 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
               {/* Grid question badges */}
               <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-4 gap-2">
                 {exam.questions.map((q, idx) => {
-                  const isCurrent = idx === currentIndex;
+                  if (!visibleIndexes.includes(idx)) return null;
+                  const isCurrent = idx === visibleIndex;
                   const isAnswered = Boolean(selectedAnswers[q.number]);
                   const qResult = isSubmitted ? questionResults[idx] : null;
 
@@ -241,7 +220,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                   }
 
                   if (isCurrent) {
-                    badgeStyle += ' ring-2 ring-[#0284C7] ring-offset-1 font-bold';
+                    badgeStyle += ' ring-2 ring-[#4F46E5] ring-offset-1 font-bold';
                   }
 
                   return (
@@ -274,8 +253,9 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                     setSelectedAnswers({});
                     setTimeRemainingSeconds((exam.metadata?.durationMinutes || 45) * 60);
                     setCurrentIndex(0);
+                    setFilterMode('all');
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Làm Lại Từ Đầu</span>
@@ -296,22 +276,23 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                       <span>KẾT QUẢ BÀI THI</span>
                     </div>
                     <h4 className="text-xl font-bold text-slate-900">
-                      Điểm số của bạn:{' '}
-                      <span className="text-[#0284C7] text-2xl">{finalScore}</span> / 10 điểm
+                      Điểm phần trắc nghiệm:{' '}
+                      <span className="text-[#4F46E5] text-2xl">{finalScore ?? '—'}</span> / 10 điểm
                     </h4>
                     <p className="text-xs text-slate-600">
-                      Đúng {correctCount}/{totalQuestions} câu • Sai {wrongCount} câu • Bỏ qua{' '}
+                      Đúng {correctCount}/{practiceScore.graded} câu trắc nghiệm • Sai {wrongCount} câu • Bỏ qua{' '}
                       {totalQuestions - answeredCount} câu
                     </p>
                   </div>
 
+                  <p className="text-xs text-slate-600">{practiceScore.manual} câu cần giáo viên chấm riêng. Điểm tự động theo trọng số câu trắc nghiệm, quy đổi thang 10.</p>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-600">Lọc xem:</span>
                     <button
                       onClick={() => setFilterMode('all')}
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                         filterMode === 'all'
-                          ? 'bg-[#0284C7] text-white'
+                          ? 'bg-[#4F46E5] text-white'
                           : 'bg-white border border-slate-200 text-slate-700'
                       }`}
                     >
@@ -365,8 +346,8 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                   </div>
 
                   {/* Options List */}
-                  {currentQuestion.options && currentQuestion.options.length > 0 && (
-                    <div className="space-y-3 pt-2" role="radiogroup">
+                  {currentQuestion.type === 'multiple_choice' && currentQuestion.options && currentQuestion.options.length > 0 && (
+                    <div className="space-y-3 pt-2" role="group" aria-label="Phương án trả lời">
                       {currentQuestion.options.map((opt) => {
                         const isSelected = selectedAnswers[currentQuestion.number] === opt.label;
                         const isCorrectAnswer =
@@ -374,7 +355,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                           currentQuestion.correctAnswer.trim().toUpperCase();
 
                         let optionCardStyle =
-                          'border-slate-200 bg-white hover:border-[#0284C7]/60 hover:bg-sky-50/30';
+                          'border-slate-200 bg-white hover:border-[#4F46E5]/60 hover:bg-sky-50/30';
 
                         if (isSubmitted) {
                           if (isCorrectAnswer) {
@@ -386,12 +367,13 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                           }
                         } else if (isSelected) {
                           optionCardStyle =
-                            'border-[#0284C7] bg-[#0284C7]/10 text-[#0284C7] font-semibold shadow-xs';
+                            'border-[#4F46E5] bg-[#4F46E5]/10 text-[#4F46E5] font-semibold shadow-xs';
                         }
 
                         return (
                           <button
                             key={opt.label}
+                            aria-pressed={isSelected}
                             onClick={() => handleSelectOption(currentQuestion.number, opt.label)}
                             disabled={isSubmitted}
                             className={`w-full min-h-[48px] p-3.5 rounded-2xl border text-left flex items-center justify-between gap-3 transition cursor-pointer ${optionCardStyle}`}
@@ -404,7 +386,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                                     : isSubmitted && isSelected && !isCorrectAnswer
                                     ? 'bg-rose-600 text-white'
                                     : isSelected
-                                    ? 'bg-[#0284C7] text-white'
+                                    ? 'bg-[#4F46E5] text-white'
                                     : 'bg-slate-100 text-slate-700'
                                 }`}
                               >
@@ -434,6 +416,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                     </div>
                   )}
 
+                  {currentQuestion.type !== 'multiple_choice' && <div className="space-y-3"><p className="text-xs text-slate-500">Câu này cần giáo viên chấm riêng. Ghi câu trả lời hoặc bài làm của bạn bên dưới.</p>{currentQuestion.options?.map(opt=><div className="text-sm" key={opt.label}><strong>{opt.label}. </strong><MathContent content={opt.text} inline/></div>)}<textarea aria-label="Bài làm tự luận hoặc trả lời khác" className="w-full border border-slate-300 rounded-xl p-3 text-sm" rows={5} disabled={isSubmitted} value={selectedAnswers[currentQuestion.number]||''} onChange={e=>handleSelectOption(currentQuestion.number,e.target.value)}/></div>}
                   {/* Solution & Explanation when submitted */}
                   {isSubmitted && (
                     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 mt-4 text-xs animate-in fade-in">
@@ -462,8 +445,8 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                 {/* Bottom Navigation between questions */}
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                   <button
-                    onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                    disabled={currentIndex === 0}
+                    onClick={() => setCurrentIndex(visibleIndexes[Math.max(0, visibleIndexes.indexOf(visibleIndex) - 1)])}
+                    disabled={visibleIndexes.indexOf(visibleIndex) <= 0}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -471,16 +454,16 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                   </button>
 
                   <button
-                    onClick={() => setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
-                    disabled={currentIndex === totalQuestions - 1}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    onClick={() => setCurrentIndex(visibleIndexes[Math.min(visibleIndexes.length - 1, visibleIndexes.indexOf(visibleIndex) + 1)])}
+                    disabled={visibleIndexes.indexOf(visibleIndex) >= visibleIndexes.length - 1}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <span>Câu tiếp theo</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-            ) : null}
+            ) : <p role="status" className="p-5 text-sm text-slate-600">Không có câu trả lời sai trong bộ lọc này.</p>}
           </div>
         </div>
 

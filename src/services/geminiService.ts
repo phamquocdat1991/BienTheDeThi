@@ -15,6 +15,7 @@ import {
   GEMINI_FALLBACK_MODELS,
   AGENT_PLATFORM_FALLBACK_MODELS,
 } from './aiClientFactory';
+import { normalizeAnalysis, validateQuestions, completeValidation, overallStatus } from '../utils/examIntegrity';
 import { cleanAndParseJSON } from './fileExtractService';
 
 // ============================================================================
@@ -137,7 +138,7 @@ export async function generateWithModelFallback(
     throw new Error('Vui lòng cài đặt API Key trước khi sử dụng ứng dụng.');
   }
 
-  const client = createGoogleAiClient(apiKey, apiConfig.provider);
+  const client = await createGoogleAiClient(apiKey, apiConfig.provider);
   const models = getOrderedFallbackModels(apiConfig.selectedModel, apiConfig.provider);
 
   let lastError: any = null;
@@ -285,7 +286,7 @@ Trả về DUY NHẤT một chuỗi JSON hợp lệ tuân thủ cấu trúc trê
     throw new Error('Dữ liệu phân tích đề gốc không chứa danh sách câu hỏi hợp lệ.');
   }
 
-  return parsed;
+  return normalizeAnalysis(parsed);
 }
 
 // ============================================================================
@@ -397,6 +398,8 @@ Hãy tạo toàn bộ câu hỏi cho ĐỀ ${level} ngay bây giờ.`;
   );
 
   let generatedExam = cleanAndParseJSON<any>(rawGenJson);
+  validateQuestions(generatedExam.questions);
+  if (generatedExam.questions.length !== analysis.questions.length) throw new Error('Số câu biến thể không khớp đề gốc. Vui lòng tạo lại.');
 
   // --- GIAI ĐOẠN 2: ĐỘNG CƠ KIỂM ĐỊNH ĐỘC LẬP 8 TIÊU CHÍ ---
   const validationSystemPrompt = `Bạn là CHUYÊN GIA PHẢN BIỆN & KIỂM ĐỊNH ĐỘC LẬP các đề thi quốc gia.
@@ -454,7 +457,7 @@ CẤU TRÚC JSON TRẢ VỀ:
   );
 
   let validationResult = cleanAndParseJSON<any>(rawValJson);
-  let evaluations: QuestionValidation[] = validationResult.evaluations || [];
+  let evaluations: QuestionValidation[] = completeValidation(generatedExam.questions, validationResult.evaluations);
 
   // --- GIAI ĐOẠN 3: TỰ ĐỘNG SỬA CÁC CÂU BỊ FAIL ---
   let repairedCount = 0;
@@ -514,18 +517,20 @@ ${JSON.stringify(generatedExam.questions, null, 2)}`;
       if (repairData.repairedQuestions && Array.isArray(repairData.repairedQuestions)) {
         for (const repQ of repairData.repairedQuestions) {
           const idx = generatedExam.questions.findIndex(
-            (q: any) => q.id === repQ.id || q.number === repQ.number
+            (q: any) => q.id === repQ.id
           );
           if (idx !== -1) {
-            generatedExam.questions[idx] = { ...generatedExam.questions[idx], ...repQ };
+            const repaired = { ...generatedExam.questions[idx], ...repQ, id: generatedExam.questions[idx].id, number: generatedExam.questions[idx].number };
+            validateQuestions([repaired]);
+            generatedExam.questions[idx] = repaired;
             repairedCount++;
 
             const evalIdx = evaluations.findIndex(
               (e) => e.questionId === repQ.id || e.questionNumber === repQ.number
             );
             if (evalIdx !== -1) {
-              evaluations[evalIdx].status = 'PASS';
-              evaluations[evalIdx].message = `[ĐÃ TỰ ĐỘNG SỬA ĐỔI THÀNH CÔNG] ${evaluations[evalIdx].message || ''} -> Đã giải lại và hiệu chỉnh đáp án chính xác.`;
+              evaluations[evalIdx].status = 'WARNING';
+              evaluations[evalIdx].message = 'Đã hiệu chỉnh; cần kiểm định lại trước khi xác nhận đạt.';
             }
           }
         }
@@ -535,14 +540,15 @@ ${JSON.stringify(generatedExam.questions, null, 2)}`;
     }
   }
 
-  // Xác định trạng thái kiểm định tổng quát
-  const remainingFails = evaluations.filter((e) => e.status === 'FAIL').length;
-  const warningCount = evaluations.filter((e) => e.status === 'WARNING').length;
-
-  let finalOverallStatus: 'PASS' | 'WARNING' | 'FAIL' = 'PASS';
-  if (remainingFails > 0 || warningCount > 0) {
-    finalOverallStatus = 'WARNING';
+  // A repair is not evidence of correctness. Independently validate the repaired exam.
+  if (repairedCount > 0) {
+    try {
+      const recheck = await generateWithModelFallback({systemInstruction: validationSystemPrompt, contents: `Kiểm định lại đề sau sửa, đối chiếu đề gốc.\n${JSON.stringify(generatedExam)}\n${JSON.stringify(analysis)}`, onModelFallback:onFallback}, apiConfig);
+      validationResult = cleanAndParseJSON<any>(recheck);
+      evaluations = completeValidation(generatedExam.questions, validationResult.evaluations);
+    } catch { /* Preserve WARNING/FAIL if revalidation cannot complete. */ }
   }
+  const finalOverallStatus = overallStatus(evaluations);
 
   const finalExam: GeneratedExam = {
     level,
@@ -635,5 +641,7 @@ ${payload.teacherNote || 'Hãy giải lại và tối ưu hóa câu hỏi này �
     validation: QuestionValidation;
   }>(rawJson);
 
+  validateQuestions([parsed.repairedQuestion]);
+  parsed.repairedQuestion = {...parsed.repairedQuestion, id:payload.question.id, number:payload.question.number, originalQuestionId:payload.question.originalQuestionId};
   return parsed;
 }

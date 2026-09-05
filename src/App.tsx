@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ExamWorkflowState,
   ExamAnalysis,
@@ -38,6 +38,9 @@ import {
 } from './services/historyService';
 
 export default function App() {
+  const sessionIdentity = useRef({ id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+  const operationLock = useRef(false);
+  const [inputVersion, setInputVersion] = useState(0);
   // 1. API Configuration State
   const [apiConfig, setApiConfig] = useState<ApiConfig>(() => loadStoredApiConfig());
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
@@ -72,9 +75,6 @@ export default function App() {
   // Tự động mở Modal nhập key khi người dùng lần đầu truy cập theo AI_INSTRUCTIONS.md
   // và kiểm tra xem có phiên làm việc cũ cần khôi phục hay không
   useEffect(() => {
-    if (!hasValidApiKey) {
-      setIsApiKeyModalOpen(true);
-    }
     const previousSession = loadCurrentSession();
     if (previousSession && previousSession.workflowState !== 'EMPTY') {
       setRestoreNotice(previousSession);
@@ -107,8 +107,8 @@ export default function App() {
   ) => {
     if (!analysis) return;
     const sessionData: ExamSessionData = {
-      id: analysis.examMetadata?.title ? `sess_${analysis.examMetadata.title}` : `sess_${Date.now()}`,
-      createdAt: new Date().toISOString(),
+      id: sessionIdentity.current.id,
+      createdAt: sessionIdentity.current.createdAt,
       updatedAt: new Date().toISOString(),
       title: analysis.examMetadata?.title || 'Đề kiểm tra',
       subject: analysis.examMetadata?.subject || 'Toán học',
@@ -129,6 +129,10 @@ export default function App() {
 
   // Khôi phục phiên làm việc
   const handleRestoreSession = (session: ExamSessionData) => {
+    if (operationLock.current) return;
+    sessionIdentity.current = { id: session.id, createdAt: session.createdAt };
+    setErrorMessage(null);
+    saveCurrentSession(session);
     setLastInputSource(session.lastInputSource);
     setExamAnalysis(session.examAnalysis);
     setExam1(session.exam1);
@@ -143,13 +147,15 @@ export default function App() {
   // BƯỚC 1: PHÂN TÍCH ĐỀ GỐC (Trực tiếp Client-Side)
   // ==========================================================================
   const handleAnalyzeExam = async (source: InputSource) => {
+    if (operationLock.current) return;
+    const previousState = workflowState;
     if (!hasValidApiKey) {
       setIsApiKeyModalOpen(true);
       return;
     }
 
     setErrorMessage(null);
-    setLastInputSource(source);
+    operationLock.current = true;
     setWorkflowState('ANALYZING');
     setLoadingText('Đang phân tích và bóc tách ma trận đề gốc...');
     setLoadingSubText(
@@ -158,6 +164,9 @@ export default function App() {
 
     try {
       const analysis = await analyzeOriginalExam(source, apiConfig, handleModelFallback);
+      sessionIdentity.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+      setLastInputSource(source);
+      setExam1(null); setExam2(null); setExam3(null);
       setExamAnalysis(analysis);
       setWorkflowState('ANALYZED');
       setActiveStepTab(2); // Chuyển sang xem ma trận phân tích
@@ -165,14 +174,16 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'Đã xảy ra lỗi trong quá trình phân tích đề gốc.');
-      setWorkflowState('EMPTY');
-    }
+      setWorkflowState(previousState);
+    } finally { operationLock.current = false; }
   };
 
   // ==========================================================================
   // BƯỚC 2: SINH ĐỀ 1 (Đổi dữ kiện & số liệu)
   // ==========================================================================
   const handleGenerateExam1 = async () => {
+    if (operationLock.current) return;
+    const previousState = workflowState;
     if (!examAnalysis) return;
     if (!hasValidApiKey) {
       setIsApiKeyModalOpen(true);
@@ -180,6 +191,7 @@ export default function App() {
     }
 
     setErrorMessage(null);
+    operationLock.current = true;
     setWorkflowState('GENERATING_EXAM_1');
     setLoadingText('AI đang tạo Đề 1 (Thay đổi dữ kiện & số liệu)...');
     setLoadingSubText(
@@ -189,20 +201,23 @@ export default function App() {
     try {
       const generated = await generateExamVariant(1, examAnalysis, [], apiConfig, handleModelFallback);
       setExam1(generated);
+      setExam2(null); setExam3(null);
       setWorkflowState('EXAM_1_COMPLETE');
       setActiveStepTab(3); // Xem Đề 1
-      syncAndSaveSession('EXAM_1_COMPLETE', 3, examAnalysis, generated, exam2, exam3, lastInputSource);
+      syncAndSaveSession('EXAM_1_COMPLETE', 3, examAnalysis, generated, null, null, lastInputSource);
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'Lỗi khi tạo Đề 1.');
-      setWorkflowState('ANALYZED'); // Giữ nguyên kết quả phân tích để giáo viên có thể thử lại
-    }
+      setWorkflowState(previousState);
+    } finally { operationLock.current = false; }
   };
 
   // ==========================================================================
   // BƯỚC 3: SINH ĐỀ 2 (Dạng bài tương đương)
   // ==========================================================================
   const handleGenerateExam2 = async () => {
+    if (operationLock.current) return;
+    const previousState = workflowState;
     if (!examAnalysis || !exam1) return;
     if (!hasValidApiKey) {
       setIsApiKeyModalOpen(true);
@@ -210,6 +225,7 @@ export default function App() {
     }
 
     setErrorMessage(null);
+    operationLock.current = true;
     setWorkflowState('GENERATING_EXAM_2');
     setLoadingText('AI đang tạo Đề 2 (Dạng bài & câu hỏi tương đương)...');
     setLoadingSubText(
@@ -225,20 +241,23 @@ export default function App() {
         handleModelFallback
       );
       setExam2(generated);
+      setExam3(null);
       setWorkflowState('EXAM_2_COMPLETE');
       setActiveStepTab(4); // Xem Đề 2
-      syncAndSaveSession('EXAM_2_COMPLETE', 4, examAnalysis, exam1, generated, exam3, lastInputSource);
+      syncAndSaveSession('EXAM_2_COMPLETE', 4, examAnalysis, exam1, generated, null, lastInputSource);
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'Lỗi khi tạo Đề 2.');
-      setWorkflowState('EXAM_1_COMPLETE'); // Giữ nguyên Đề 1 đã tạo
-    }
+      setWorkflowState(previousState);
+    } finally { operationLock.current = false; }
   };
 
   // ==========================================================================
   // BƯỚC 4: SINH ĐỀ 3 (Phân hóa & Vận dụng sâu)
   // ==========================================================================
   const handleGenerateExam3 = async () => {
+    if (operationLock.current) return;
+    const previousState = workflowState;
     if (!examAnalysis || !exam1 || !exam2) return;
     if (!hasValidApiKey) {
       setIsApiKeyModalOpen(true);
@@ -246,6 +265,7 @@ export default function App() {
     }
 
     setErrorMessage(null);
+    operationLock.current = true;
     setWorkflowState('GENERATING_EXAM_3');
     setLoadingText('AI đang tạo Đề 3 (Phân hóa & Vận dụng sâu)...');
     setLoadingSubText(
@@ -267,8 +287,8 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'Lỗi khi tạo Đề 3.');
-      setWorkflowState('EXAM_2_COMPLETE'); // Giữ nguyên Đề 2 đã tạo
-    }
+      setWorkflowState(previousState);
+    } finally { operationLock.current = false; }
   };
 
   // Cập nhật 1 câu hỏi cụ thể sau khi giáo viên sửa
@@ -283,7 +303,7 @@ export default function App() {
     ) => {
       if (!exam) return;
       const updatedQuestions = exam.questions.map((q) =>
-        q.id === updatedQuestion.id || q.number === updatedQuestion.number ? updatedQuestion : q
+        q.id === updatedQuestion.id ? updatedQuestion : q
       );
 
       let updatedReport = exam.validationReport ? [...exam.validationReport] : [];
@@ -303,6 +323,7 @@ export default function App() {
         ...exam,
         questions: updatedQuestions,
         validationReport: updatedReport,
+        overallValidationStatus: updatedReport.some(v => v.status === 'FAIL') ? 'FAIL' : updatedReport.length !== updatedQuestions.length || updatedReport.some(v => v.status !== 'PASS') ? 'WARNING' : 'PASS',
       });
     };
 
@@ -313,6 +334,10 @@ export default function App() {
 
   // Reset toàn bộ trạng thái app
   const handleFullReset = () => {
+    if (operationLock.current) return;
+    sessionIdentity.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    try { localStorage.removeItem('bienthedethi_input_draft'); } catch {}
+    setInputVersion(v => v + 1);
     clearCurrentSession();
     setWorkflowState('EMPTY');
     setActiveStepTab(1);
@@ -337,7 +362,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-[#0284C7] selection:text-white">
+    <div className="app-shell min-h-screen text-slate-900 flex flex-col font-sans selection:bg-[#0284C7] selection:text-white">
       {/* Header */}
       <Header
         workflowState={workflowState}
@@ -363,7 +388,7 @@ export default function App() {
             <div>
               <p className="font-bold text-amber-200">Tự động chuyển model dự phòng:</p>
               <p className="mt-0.5">
-                Model <code className="bg-amber-950 px-1 py-0.5 rounded">{fallbackNotice.from}</code> đang quá tải, hệ thống đang dùng model dự phòng{' '}
+                Model <code className="bg-amber-950 px-1 py-0.5 rounded">{fallbackNotice.from}</code> chưa phản hồi, hệ thống đang dùng model dự phòng{' '}
                 <code className="bg-amber-950 px-1 py-0.5 rounded text-white font-bold">{fallbackNotice.to}</code>.
               </p>
             </div>
@@ -372,7 +397,7 @@ export default function App() {
       )}
 
       {/* Main Canvas */}
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-6">
+      <main id="main-content" className="app-main flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-6">
         {/* Banner khôi phục phiên làm việc trước đó */}
         {restoreNotice && workflowState === 'EMPTY' && (
           <div className="max-w-4xl mx-auto p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sky-950 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
@@ -380,7 +405,7 @@ export default function App() {
               <RotateCcw className="w-5 h-5 text-[#0284C7] shrink-0" />
               <div>
                 <p className="font-bold text-slate-900 text-sm">
-                  Bạn có một phiên làm việc chưa hoàn tất: <span className="text-[#0284C7]">{restoreNotice.title}</span>
+                  Tiếp tục phiên làm việc gần nhất: <span className="text-[#0284C7]">{restoreNotice.title}</span>
                 </p>
                 <p className="text-slate-500 mt-0.5">
                   Lưu gần nhất lúc {new Date(restoreNotice.updatedAt).toLocaleTimeString('vi-VN')} ({restoreNotice.subject} - {restoreNotice.grade})
@@ -434,6 +459,7 @@ export default function App() {
         {/* STEP 1: Input Section */}
         {activeStepTab === 1 && (
           <InputSection
+            key={inputVersion}
             onAnalyze={handleAnalyzeExam}
             isLoading={isLoading}
             hasApiKey={hasValidApiKey}

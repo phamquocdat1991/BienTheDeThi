@@ -144,14 +144,14 @@ export const SummaryCompletionView: React.FC<SummaryCompletionViewProps> = ({
             onClick={() => setSelectedLevel(ex.level)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
               selectedLevel === ex.level
-                ? 'bg-white text-[#0284C7] shadow-sm border border-slate-200'
+                ? 'bg-white text-[#4F46E5] shadow-sm border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
             {ex.level === 1 ? (
               <Layers className="w-4 h-4 text-[#10B981]" />
             ) : ex.level === 2 ? (
-              <GitCompare className="w-4 h-4 text-[#0284C7]" />
+              <GitCompare className="w-4 h-4 text-[#4F46E5]" />
             ) : (
               <Sparkles className="w-4 h-4 text-[#F59E0B]" />
             )}

@@ -1,3 +1,4 @@
+import { escapeExportData } from './htmlSafety';
 import { GeneratedExam } from '../types';
 
 /**
@@ -122,7 +123,7 @@ function renderExamQuestionsHtml(exam: GeneratedExam, isStudentMode = false): st
               ? `
             <tr>
               ${q.options
-                .slice(2, 4)
+                .slice(2)
                 .map((opt) => `<td><strong>${opt.label}.</strong> ${opt.text}</td>`)
                 .join('')}
             </tr>
@@ -194,6 +195,7 @@ function renderAnswersAndSolutionsHtml(exam: GeneratedExam): string {
  * 1. XUẤT ĐỀ THI CHO HỌC SINH LÀM BÀI (Không kèm đáp án)
  */
 export function exportStudentExamDoc(exam: GeneratedExam): void {
+  exam = escapeExportData(exam);
   const contentHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><meta charset='utf-8'><title>${exam.title} - Đề Thi Học Sinh</title><style>${WORD_BASE_CSS}</style></head>
@@ -234,6 +236,7 @@ export function exportStudentExamDoc(exam: GeneratedExam): void {
  * 2. XUẤT ĐÁP ÁN & HƯỚNG DẪN CHẤM CHI TIẾT DÀNH CHO GIÁO VIÊN
  */
 export function exportTeacherAnswerDoc(exam: GeneratedExam): void {
+  exam = escapeExportData(exam);
   const contentHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><meta charset='utf-8'><title>${exam.title} - Đáp Án & Hướng Dẫn Chấm</title><style>${WORD_BASE_CSS}</style></head>
@@ -256,6 +259,7 @@ export function exportTeacherAnswerDoc(exam: GeneratedExam): void {
  * 3. XUẤT TRỌN GÓI: ĐỀ THI + ĐÁP ÁN (Full Bundle)
  */
 export function exportToWordDoc(exam: GeneratedExam, includeAnswers = true): void {
+  exam = escapeExportData(exam);
   const contentHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><meta charset='utf-8'><title>${exam.title}</title><style>${WORD_BASE_CSS}</style></head>
@@ -297,6 +301,7 @@ export function exportAllThreeVariantsDoc(
   exam2: GeneratedExam,
   exam3: GeneratedExam
 ): void {
+  [exam1, exam2, exam3] = [exam1, exam2, exam3].map(escapeExportData);
   const contentHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><meta charset='utf-8'><title>Trọn Bộ 3 Cấp Độ Đề Thi Biến Thể</title><style>${WORD_BASE_CSS}</style></head>

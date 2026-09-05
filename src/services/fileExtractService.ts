@@ -1,4 +1,3 @@
-import mammoth from 'mammoth';
 import { InputSource } from '../types';
 
 /**
@@ -9,15 +8,18 @@ export async function extractFileContentInBrowser(file: File): Promise<InputSour
   const lowerName = file.name.toLowerCase();
   const mimeType = file.type || '';
 
+  if (file.size === 0 || file.size > 25 * 1024 * 1024) throw new Error('Tệp rỗng hoặc vượt giới hạn 25 MB.');
+  if (lowerName.endsWith('.doc')) throw new Error('Hãy chuyển tệp .doc sang .docx hoặc PDF.');
   // 1. File Word DOCX
   if (
     mimeType.includes('wordprocessingml') ||
-    mimeType.includes('msword') ||
     lowerName.endsWith('.docx')
   ) {
     const arrayBuffer = await file.arrayBuffer();
     try {
+      const { default: mammoth } = await import('mammoth');
       const result = await mammoth.extractRawText({ arrayBuffer });
+      if (!result.value.trim()) throw new Error('Word không chứa văn bản đọc được. Hãy xuất PDF để giữ hình và công thức.');
       return {
         type: 'text',
         fileName: file.name,
@@ -26,14 +28,7 @@ export async function extractFileContentInBrowser(file: File): Promise<InputSour
         rawText: result.value,
       };
     } catch (e: any) {
-      console.warn('Lỗi mammoth trích xuất text DOCX, đọc dưới dạng text thô:', e);
-      const text = await file.text();
-      return {
-        type: 'text',
-        fileName: file.name,
-        fileSize: file.size,
-        rawText: text,
-      };
+      throw new Error('Không thể đọc tệp Word. Hãy kiểm tra tệp .docx hoặc xuất sang PDF, không đổi đuôi tệp trực tiếp.');
     }
   }
 
@@ -64,7 +59,7 @@ export async function extractFileContentInBrowser(file: File): Promise<InputSour
   // 4. File Hình ảnh (PNG, JPG, JPEG, WEBP)
   if (mimeType.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(lowerName)) {
     const base64 = await fileToBase64(file);
-    const detectedMime = mimeType || (lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg');
+    const detectedMime = mimeType || (lowerName.endsWith('.png') ? 'image/png' : lowerName.endsWith('.webp') ? 'image/webp' : 'image/jpeg');
     return {
       type: 'image',
       fileName: file.name,
@@ -127,7 +122,8 @@ export function cleanAndParseJSON<T>(rawText: string): T {
   }
   cleaned = cleaned.trim();
 
-  // Áp dụng sanitize LaTeX
+  // Preserve valid JSON escapes (newlines, Unicode) before repairing malformed LaTeX.
+  try { return JSON.parse(cleaned) as T; } catch {}
   const sanitized = sanitizeLatexInJson(cleaned);
 
   // Thử parse trực tiếp
