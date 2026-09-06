@@ -33,8 +33,8 @@ function shuffleArray<T>(array: T[]): T[] {
 /**
  * Trộn 1 câu hỏi trắc nghiệm: hoán vị phương án A, B, C, D và cập nhật đáp án đúng
  */
-function shuffleSingleQuestion(q: VariantQuestion, newNumber: number): VariantQuestion {
-  if (!q.options || q.options.length === 0 || q.type === 'essay') {
+export function shuffleSingleQuestion(q: VariantQuestion, newNumber: number): VariantQuestion {
+  if (!q.options || q.options.length === 0 || q.type !== 'multiple_choice') {
     return {
       ...q,
       number: newNumber,
@@ -55,10 +55,11 @@ function shuffleSingleQuestion(q: VariantQuestion, newNumber: number): VariantQu
 
   const newOptions: QuestionOption[] = shuffledRawOptions.map((opt, idx) => {
     const label = labels[idx] || String.fromCharCode(65 + idx);
-    if (originalCorrectOption && opt.text === originalCorrectOption.text) {
+    if (originalCorrectOption && opt === originalCorrectOption) {
       newCorrectAnswer = label;
     }
     return {
+      ...opt,
       label,
       text: opt.text,
     };

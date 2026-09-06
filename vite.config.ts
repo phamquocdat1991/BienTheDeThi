@@ -1,3 +1,4 @@
+import aiHandler from './api/ai';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -5,7 +6,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), {name:'local-ai-api',configureServer(server){server.middlewares.use('/api/ai', (req,res) => {void aiHandler(req,res);});}}],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

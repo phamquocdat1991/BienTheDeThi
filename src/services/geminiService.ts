@@ -138,7 +138,7 @@ export async function generateWithModelFallback(
   }
 
   const client = createGoogleAiClient(apiKey, apiConfig.provider);
-  const models = getOrderedFallbackModels(apiConfig.selectedModel, apiConfig.provider);
+  const models = [apiConfig.selectedModel];
 
   let lastError: any = null;
 
@@ -397,6 +397,7 @@ Hãy tạo toàn bộ câu hỏi cho ĐỀ ${level} ngay bây giờ.`;
   );
 
   let generatedExam = cleanAndParseJSON<any>(rawGenJson);
+  if (!Array.isArray(generatedExam.questions) || !generatedExam.questions.length || generatedExam.questions.some((q:any) => typeof q.questionText !== 'string' || typeof q.correctAnswer !== 'string')) throw new Error('AI trả câu hỏi không hợp lệ. Vui lòng thử lại.');
 
   // --- GIAI ĐOẠN 2: ĐỘNG CƠ KIỂM ĐỊNH ĐỘC LẬP 8 TIÊU CHÍ ---
   const validationSystemPrompt = `Bạn là CHUYÊN GIA PHẢN BIỆN & KIỂM ĐỊNH ĐỘC LẬP các đề thi quốc gia.
@@ -454,7 +455,8 @@ CẤU TRÚC JSON TRẢ VỀ:
   );
 
   let validationResult = cleanAndParseJSON<any>(rawValJson);
-  let evaluations: QuestionValidation[] = validationResult.evaluations || [];
+  let evaluations: QuestionValidation[] = Array.isArray(validationResult.evaluations) ? validationResult.evaluations : [];
+  for (const q of generatedExam.questions || []) if (!evaluations.some(e => e.questionId === q.id)) evaluations.push({ questionId:q.id, questionNumber:q.number, status:'WARNING', message:'AI chưa kiểm định câu này.' } as QuestionValidation);
 
   // --- GIAI ĐOẠN 3: TỰ ĐỘNG SỬA CÁC CÂU BỊ FAIL ---
   let repairedCount = 0;
@@ -524,8 +526,8 @@ ${JSON.stringify(generatedExam.questions, null, 2)}`;
               (e) => e.questionId === repQ.id || e.questionNumber === repQ.number
             );
             if (evalIdx !== -1) {
-              evaluations[evalIdx].status = 'PASS';
-              evaluations[evalIdx].message = `[ĐÃ TỰ ĐỘNG SỬA ĐỔI THÀNH CÔNG] ${evaluations[evalIdx].message || ''} -> Đã giải lại và hiệu chỉnh đáp án chính xác.`;
+              evaluations[evalIdx].status = 'WARNING';
+              evaluations[evalIdx].message = `[ĐÃ SỬA — CẦN KIỂM ĐỊNH LẠI] ${evaluations[evalIdx].message || ''} -> Chưa xác nhận độ chính xác sau sửa.`;
             }
           }
         }
@@ -541,7 +543,7 @@ ${JSON.stringify(generatedExam.questions, null, 2)}`;
 
   let finalOverallStatus: 'PASS' | 'WARNING' | 'FAIL' = 'PASS';
   if (remainingFails > 0 || warningCount > 0) {
-    finalOverallStatus = 'WARNING';
+    finalOverallStatus = remainingFails > 0 ? 'FAIL' : 'WARNING';
   }
 
   const finalExam: GeneratedExam = {

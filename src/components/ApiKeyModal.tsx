@@ -13,6 +13,7 @@ import {
   Layers,
   HelpCircle,
 } from 'lucide-react';
+import { createGoogleAiClient } from '../services/aiClientFactory';
 import { AiProvider, ApiConfig } from '../types';
 import {
   GEMINI_MODELS,
@@ -40,6 +41,8 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const [agentPlatformKey, setAgentPlatformKey] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('gemini-3.7-flash');
   const [showKey, setShowKey] = useState<boolean>(false);
+  const [testing, setTesting] = useState(false);
+  const [connection, setConnection] = useState('');
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -106,11 +109,19 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     }, 800);
   };
 
+  const testConnection = async () => {
+    setTesting(true); setConnection(''); setErrorMessage(null);
+    try { const res = await createGoogleAiClient(currentKey,provider).models.generateContent({model:selectedModel,contents:'Return exactly {"ok":true}',config:{responseMimeType:'application/json'}});
+      const result=JSON.parse(res.text||'{}'); if(result.ok!==true)throw new Error('Model không trả response kiểm tra hợp lệ.');setConnection('Kết nối thật thành công: '+selectedModel);
+    }catch(e){setErrorMessage((e as Error).message);}finally{setTesting(false);}
+  };
+
   const modelsList = provider === 'agent-platform' ? AGENT_PLATFORM_MODELS : GEMINI_MODELS;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-3 border-b"><button type="button" className="px-4 py-2 rounded-lg bg-sky-700 text-white disabled:opacity-50" disabled={!isCurrentKeyValid || testing} onClick={testConnection}>{testing?'Đang kết nối…':'Kiểm tra kết nối thật'}</button><p role="status">{connection}</p></div>
         {/* Header Modal */}
         <div className="bg-[#1E293B] text-white p-6 flex items-start justify-between border-b border-[#334155]">
           <div className="flex items-center gap-3">
@@ -324,7 +335,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5 text-xs text-slate-600">
             <ShieldCheck className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
             <p className="text-[11px] leading-relaxed">
-              <strong>Bảo mật tuyệt đối:</strong> API Key được lưu an toàn duy nhất trên trình duyệt của bạn (<code className="bg-slate-200 px-1 py-0.5 rounded">localStorage</code>) và chỉ được gửi trực tiếp tới máy chủ Google API để tạo nội dung.
+              <strong>Lưu khóa theo phiên:</strong> API Key được giữ trong phiên trình duyệt của bạn (<code className="bg-slate-200 px-1 py-0.5 rounded">sessionStorage</code>) và gửi qua máy chủ ứng dụng tới Google. Khóa không lưu vào source hoặc log; đóng phiên trình duyệt sẽ cần nhập lại.
             </p>
           </div>
 

@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import type { GoogleGenAI } from '@google/genai';
 import { AiProvider, ApiConfig } from '../types';
 
 // ============================================================================
@@ -110,12 +110,13 @@ export const AGENT_PLATFORM_FALLBACK_MODELS = [
 // ============================================================================
 export const loadStoredApiConfig = (): ApiConfig => {
   try {
+    for (const key of [STORAGE_KEYS.GEMINI_KEY, STORAGE_KEYS.AGENT_PLATFORM_KEY]) { const legacy = localStorage.getItem(key); if (legacy && !sessionStorage.getItem(key)) sessionStorage.setItem(key, legacy); localStorage.removeItem(key); }
     const rawProvider = localStorage.getItem(STORAGE_KEYS.PROVIDER);
     const provider: AiProvider = rawProvider === 'agent-platform' ? 'agent-platform' : 'gemini';
 
     // Đọc key từ storage hoặc biến môi trường VITE (nếu có)
-    const storedGemini = localStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-    const storedAgent = localStorage.getItem(STORAGE_KEYS.AGENT_PLATFORM_KEY) || '';
+    const storedGemini = sessionStorage.getItem(STORAGE_KEYS.GEMINI_KEY) || '';
+    const storedAgent = sessionStorage.getItem(STORAGE_KEYS.AGENT_PLATFORM_KEY) || '';
 
     const defaultModel = provider === 'agent-platform' ? 'gemini-2.5-flash' : 'gemini-3.7-flash';
     let storedModel = localStorage.getItem(STORAGE_KEYS.MODEL) || defaultModel;
@@ -152,10 +153,10 @@ export const saveStoredApiConfig = (config: Partial<ApiConfig>): void => {
       localStorage.setItem(STORAGE_KEYS.SELECTION_SOURCE, 'manual');
     }
     if (config.geminiKey !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.GEMINI_KEY, config.geminiKey.trim());
+      sessionStorage.setItem(STORAGE_KEYS.GEMINI_KEY, config.geminiKey.trim()); localStorage.removeItem(STORAGE_KEYS.GEMINI_KEY);
     }
     if (config.agentPlatformKey !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.AGENT_PLATFORM_KEY, config.agentPlatformKey.trim());
+      sessionStorage.setItem(STORAGE_KEYS.AGENT_PLATFORM_KEY, config.agentPlatformKey.trim()); localStorage.removeItem(STORAGE_KEYS.AGENT_PLATFORM_KEY);
     }
     if (config.selectedModel) {
       localStorage.setItem(STORAGE_KEYS.MODEL, config.selectedModel);
@@ -185,10 +186,18 @@ export const createGoogleAiClient = (
     throw new Error('Vui lòng cấu hình API Key trước khi sử dụng tính năng này.');
   }
 
-  if (provider === 'agent-platform') {
-    // vertexai: true là cờ định tuyến SDK sang aiplatform.googleapis.com
-    return new GoogleGenAI({ vertexai: true, apiKey: trimmedKey });
-  }
-
-  return new GoogleGenAI({ apiKey: trimmedKey });
+  return { models: { generateContent: async (request: any) => {
+    const config = request.config || {};
+    const response = await fetch('/api/ai', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Gemini-Key': trimmedKey },
+      body: JSON.stringify({ provider, model: request.model, contents: request.contents, config: {
+        systemInstruction: config.systemInstruction, responseMimeType: config.responseMimeType || 'application/json',
+        responseJsonSchema: config.responseJsonSchema, maxOutputTokens: Math.min(config.maxOutputTokens || 16384, 32768),
+      }}), signal: AbortSignal.timeout(270000),
+    });
+    const data = await response.json().catch(() => ({error:'Server AI không trả JSON. Kiểm tra cấu hình deployment.'}));
+    if (!response.ok) throw Object.assign(new Error(data.error || 'Request AI thất bại.'), {status:response.status,code:data.code});
+    if(typeof data.text !== 'string') throw new Error('Response AI thiếu nội dung.');
+    return { text: data.text, usageMetadata: data.usage };
+  }}} as unknown as GoogleGenAI;
 };

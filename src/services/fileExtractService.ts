@@ -1,4 +1,5 @@
 import mammoth from 'mammoth';
+import { detectFile } from '../engine/import';
 import { InputSource } from '../types';
 
 /**
@@ -6,6 +7,7 @@ import { InputSource } from '../types';
  * Hỗ trợ: Microsoft Word (.docx), PDF, Ảnh (.png, .jpg, .webp), Text (.txt).
  */
 export async function extractFileContentInBrowser(file: File): Promise<InputSource> {
+  await detectFile(file);
   const lowerName = file.name.toLowerCase();
   const mimeType = file.type || '';
 
@@ -25,15 +27,8 @@ export async function extractFileContentInBrowser(file: File): Promise<InputSour
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         rawText: result.value,
       };
-    } catch (e: any) {
-      console.warn('Lỗi mammoth trích xuất text DOCX, đọc dưới dạng text thô:', e);
-      const text = await file.text();
-      return {
-        type: 'text',
-        fileName: file.name,
-        fileSize: file.size,
-        rawText: text,
-      };
+    } catch {
+      throw new Error('DOCX bị hỏng hoặc không đọc được. Không xử lý dữ liệu nhị phân như văn bản.');
     }
   }
 
@@ -132,11 +127,11 @@ export function cleanAndParseJSON<T>(rawText: string): T {
 
   // Thử parse trực tiếp
   try {
-    return JSON.parse(sanitized) as T;
+    return JSON.parse(cleaned) as T;
   } catch (err1) {
     // Thử parse cleaned ban đầu nếu sanitize lỗi
     try {
-      return JSON.parse(cleaned) as T;
+      return JSON.parse(sanitized) as T;
     } catch (err2) {
       // Tìm cặp ngoặc { ... } hoặc [ ... ] ngoài cùng
       const firstBrace = cleaned.indexOf('{');

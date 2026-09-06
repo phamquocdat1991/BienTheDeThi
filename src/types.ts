@@ -28,6 +28,7 @@ export type DifficultyLevel =
   | 'Vận dụng cao';
 
 export interface QuestionOption {
+  id?: string;
   label: string; // 'A', 'B', 'C', 'D', ...
   text: string;
 }

@@ -1,4 +1,7 @@
 import React, { useMemo } from 'react';
+import katex from 'katex';
+import 'katex/contrib/mhchem';
+import 'katex/dist/katex.min.css';
 
 interface MathContentProps {
   content: string;
@@ -65,13 +68,13 @@ function parseMathSegments(text: string): Segment[] {
  */
 function renderKatexString(latex: string, displayMode = false): string | null {
   try {
-    const katex = (window as any).katex;
+
     if (katex && typeof katex.renderToString === 'function') {
       return katex.renderToString(latex, {
         displayMode,
         throwOnError: false,
         strict: false,
-        trust: true,
+        trust: false,
       });
     }
   } catch (err) {

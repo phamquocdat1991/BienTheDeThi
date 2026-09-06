@@ -1,8 +1,1 @@
-{
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
+{"functions":{"api/ai.ts":{"maxDuration":300}},"rewrites":[{"source":"/((?!api/).*)","destination":"/index.html"}]}
