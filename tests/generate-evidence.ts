@@ -10,6 +10,7 @@ const raster:Rasterizer=async s=>{const bytes=s.startsWith('data:')?Buffer.from(
 const doc=sampleDocument();
 doc.metadata.duration='45';doc.metadata.school='TRƯỜNG THCS — KIỂM TRA BẢN XUẤT';
 doc.questions[0].content+=' Công thức: $\\frac{1}{2}$; $\\sqrt{x}$; $x_1^2$; $\\vec{AB}$; $\\alpha$.';
+doc.questions[0].templates!.content+=' Công thức: $\\frac{1}{2}$; $\\sqrt{x}$; $x_1^2$; $\\vec{AB}$; $\\alpha$.';
 for(const q of doc.questions){q.validation.reviewed=true;q.validation.status='ready';q.visuals.forEach(v=>v.needsReview=false);}
 const exam={...composeExam(doc,'001'),exportMode:'teacher' as const};
 await fs.mkdir('test-results',{recursive:true});

@@ -56,8 +56,21 @@ export function segmentDocument(doc:DocumentModel):DocumentModel {
     if(current) {if(block.table)current.tables.push(block.table);if(block.asset)current.visuals.push(block.asset);}
   }
   for(const q of questions) {
+    // Only an explicit answer heading is evidence; never infer answers from prose.
+    const answerLines=[...q.content.matchAll(/^(?:Đáp án|Answer)\s*:\s*(.+)$/gimu)];
+    let detectedAnswer='';
+    if(answerLines.length===1) {
+      const match=answerLines[0];detectedAnswer=match[1].trim();
+      q.explanation=q.content.slice(match.index!+match[0].length).trim().replace(/^(?:Lời giải|Explanation)\s*:\s*/iu,'');
+      q.content=q.content.slice(0,match.index).trim();
+    }
     const split=q.content.split(/(?:^|\n|\s{2,})([A-H])[.)]\s+/g);
     if(split.length>=5) {q.content=split[0].trim();for(let i=1;i<split.length;i+=2)q.options.push({id:`${q.id}-${split[i]}`,text:split[i+1]?.trim()||''});q.type='single_choice';}
+    if(detectedAnswer) {
+      const option=q.options.find(o=>o.id===`${q.id}-${detectedAnswer}`);
+      q.correctAnswer=option?{optionIds:[option.id],text:''}:{optionIds:[],text:detectedAnswer};
+      q.validation.answerConfidence=0.7;
+    }
     q.formulas=Array.from(q.content.matchAll(/\$\$([\s\S]*?)\$\$|\$([^$\n]+)\$/g)).map((m,i)=>({id:`${q.id}-f${i}`,rawSource:m[1]??m[2],latex:normalizeLatex(m[1]??m[2]),confidence:0.7,needsReview:true,kind:'math' as const}));
     q.originalContent=q.content;
   }

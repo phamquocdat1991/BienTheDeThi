@@ -38,6 +38,15 @@ export function validateQuestion(q: QuestionModel) {
   const errors:string[]=[], warnings:string[]=[];
   if(!QuestionSchema.safeParse(q).success) return {valid:false, errors:['QuestionModel sai cấu trúc.'], warnings, confidence:0};
   if(!q.content.trim()) errors.push('Thiếu nội dung câu hỏi.');
+  if(q.templates && q.solver) {
+    try {
+      const expected=templateValues(q);
+      const same=(a:string,b:string)=>a.trim().replace(/\s+/g,' ')===b.trim().replace(/\s+/g,' ');
+      if(!same(q.content,expected.content)) errors.push('Nội dung không khớp template và dữ kiện. Đồng bộ hoặc chỉnh template trước khi duyệt.');
+      if(!same(q.explanation,expected.explanation)) errors.push('Lời giải không khớp template và dữ kiện.');
+      for(const o of q.options) if(!same(o.text,expected.options[o.id]??'')) errors.push(`Phương án ${o.id} không khớp template và dữ kiện.`);
+    } catch(e) { errors.push((e as Error).message); }
+  }
   if(!answerText(q).trim()) errors.push('Thiếu đáp án.');
   if(new Set(q.options.map(o=>o.id)).size!==q.options.length) errors.push('Trùng ID lựa chọn.');
   if(new Set(q.options.map(o=>o.text.trim().toLocaleLowerCase())).size!==q.options.length) errors.push('Phương án bị trùng.');
@@ -64,6 +73,23 @@ export function validateQuestion(q: QuestionModel) {
 }
 export function syncVisuals(q: QuestionModel): QuestionModel {
   return {...q,visuals:q.visuals.map(v=>{const next=structuredClone(v);if(next.kind==='geometry') {next.points=next.points.map(p=>({...p,x:p.xVariable&&q.variables[p.xVariable]?q.variables[p.xVariable].value:p.x,y:p.yVariable&&q.variables[p.yVariable]?q.variables[p.yVariable].value:p.y}));next.edges=next.edges.map(e=>e.variable&&q.variables[e.variable]?{...e,label:String(q.variables[e.variable].value)}:e);}next.dependencyHash=dependencyHash(next,q);return next;})};
+}
+export function templateValues(q:QuestionModel) {
+  if(!q.templates||!q.solver) throw Error('Câu chưa có template và solver.');
+  const answer=solve(q)!;
+  const fill=(s:string)=>s.replace(/\{\{([\w]+)\}\}/g,(_,key)=>{
+    if(key==='answer') return String(Number(answer.toPrecision(12)));
+    if(!q.variables[key]) throw Error(`Template thiếu biến ${key}.`);
+    return String(q.variables[key].value);
+  });
+  return {content:fill(q.templates.content),explanation:fill(q.templates.explanation),answer:fill(q.templates.answer),options:Object.fromEntries(Object.entries(q.templates.options).map(([id,s])=>[id,fill(s)]))};
+}
+// Explicit user action only: never run this automatically over manual edits.
+export function syncQuestionFromData(q:QuestionModel):QuestionModel {
+  if(q.formulas.length||q.tables.length||q.visuals.some(v=>v.kind==='asset'&&v.dependencies.length)) throw Error('Công thức, bảng hoặc ảnh phụ thuộc cần template bổ sung; không tự ghi đè.');
+  const expected=templateValues(q);
+  const options=q.options.map(o=>{if(expected.options[o.id]===undefined) throw Error('Template chưa bao phủ mọi lựa chọn.');return {...o,text:expected.options[o.id]};});
+  return syncVisuals({...q,content:expected.content,explanation:expected.explanation,options,correctAnswer:{...q.correctAnswer,text:expected.answer},validation:{...q.validation,status:'needs_review',reviewed:false,errors:[]}});
 }
 export function shuffled<T>(a:T[], random= Math.random):T[] {const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 export function composeExam(doc:DocumentModel,code:string,shuffleQuestions=false,shuffleOptions=false):ExamModel {

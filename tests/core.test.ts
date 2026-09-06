@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { z } from 'zod';
 import { QuestionSchema, VisualSchema } from '../src/engine/schema';
 import { sampleDocument } from '../src/engine/sample';
-import { normalizeLatex, formulaError, validateQuestion, syncVisuals, composeExam, exportErrors, answerText, fromLegacy, hash } from '../src/engine/core';
+import { normalizeLatex, formulaError, validateQuestion, syncVisuals, syncQuestionFromData, composeExam, exportErrors, answerText, fromLegacy, hash } from '../src/engine/core';
 import { numericVariant, mutationErrors, adapterFor } from '../src/engine/variant';
 import { importText, detectFile } from '../src/engine/import';
 import { cleanAndParseJSON } from '../src/services/fileExtractService';
@@ -28,3 +28,22 @@ test('export blocks unreviewed or mismatched answers',()=>{const doc=sampleDocum
 test('file type uses signature and enforces max size',async()=>{await assert.rejects(detectFile(new File(['not a pdf'],'exam.pdf',{type:'application/pdf'})));await assert.rejects(detectFile(new File(['%PDF-1.7'],'exam.png',{type:'image/png'})));assert.equal(await detectFile(new File(['%PDF-1.7'],'wrong.bin')),'application/pdf');await assert.rejects(detectFile(new File([],'empty.txt')));});
 test('API error reports quota separately and never copies secret',()=>{const e=apiError({status:429,message:'secret-value'});assert.equal(e.code,'QUOTA_EXCEEDED');assert.ok(!e.message.includes('secret-value'));assert.equal(apiError({status:404}).code,'MODEL_UNAVAILABLE');});
 test('dependency hash ignores object key ordering',()=>assert.equal(hash({b:2,a:1}),hash({a:1,b:2})));
+test('manual content cannot silently disagree with variables and visual',()=>{
+ const q=sampleDocument().questions[0];q.content=q.content.replace('AB = 3','AB = 6');q.validation.reviewed=true;
+ assert.ok(validateQuestion(q).errors.some(e=>e.includes('Nội dung không khớp')));
+ q.variables.AB.value=6;const next=syncQuestionFromData(q);
+ assert.match(next.content,/AB = 6/);assert.equal(next.validation.reviewed,false);
+ assert.equal(validateQuestion(next).valid,true);assert.ok(next.explanation.includes(next.correctAnswer.text));
+ assert.equal(q.correctAnswer.text,'5','sync does not mutate the original');
+});
+test('stale explanation is rejected for constrained templates',()=>{
+ const q=numericVariant(sampleDocument().questions[0],7);q.explanation='Đáp án là 5';
+ assert.ok(validateQuestion(q).errors.some(e=>e.includes('Lời giải không khớp')));
+});
+test('explicit teacher answer headings are separated before option parsing',()=>{
+ const doc=importText('Câu 1. Tính\nĐáp án: 5\nLời giải: Hai cộng ba.\nCâu 2. Chọn\nA. Một\nB. Hai\nĐáp án: B\nHai là đúng.');
+ assert.equal(doc.questions[0].content,'Tính');assert.equal(doc.questions[0].correctAnswer.text,'5');
+ assert.equal(doc.questions[0].explanation,'Hai cộng ba.');
+ assert.equal(answerText(doc.questions[1]),'B');assert.equal(doc.questions[1].options[1].text,'Hai');
+ assert.equal(doc.questions[1].validation.reviewed,false);
+});
