@@ -92,3 +92,12 @@ Browser logs observed extension metadata errors with `chrome-extension://` sourc
 ## L. Limitations / next phase
 
 Retest this corrective commit on its new Preview; real Gemini connection and seven model tests; real scan/PDF/DOCX/vision matrix; broader semantic/numeric validators; native PDF image/table reconstruction; legacy export modernization; actual mobile verification; wider export QA and old-feature regression. Promote only after all critical gates pass. This report is a checkpoint, not an acceptance certificate.
+
+## Corrective Preview retest — 2026-09-07
+
+- Code commit `414bc9783698e04c2e7726aaaead7a37bfd50798`, deployment `dpl_C81rYoNL4TPYHvB5S76HJwxceXe9`, Vite, READY, build approximately 36 seconds. URL: `https://bien-the-de-dggeyhosb-quoc-dat4.vercel.app`.
+- Mismatch retest PASS: changed only question text AB=3 → AB=6. Review button disabled and visible template/data mismatch error displayed.
+- Explicit synchronization PASS: changed variable AB to 6, clicked synchronization; content and figure label became 6, answer became `7.21110255093`, explanation recalculated; errors cleared but teacher review still required. See [browser evidence](evidence-sync.jpg).
+- Teacher DOCX retest PASS for answer separation: same downloaded fixture imported, answer field `5` and original explanation now populated separately; 2 questions, 2 images, 1 table retained. Caption remains part of content and question type/metadata still need review.
+- Formula export integration PASS for fixture: generated actual DOCX/PDF from shared production exporters with a real SVG rasterizer, rendered all two pages of each. Fraction, root, power/subscript, vector and Greek alpha were rendered, not raw LaTeX; no observed clipping. These integration files were generated locally, separate from the earlier browser downloads.
+- Real Gemini and full acceptance gates remain blocked/not complete. No production changes.
