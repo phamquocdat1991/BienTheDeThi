@@ -1,11 +1,11 @@
 # Multimodal V2 — interim implementation and verification report
 
-Status: **NOT DONE; production promotion blocked.** Evidence below is from the feature branch, not production. No Gemini credential was supplied in this session; no real Gemini request is counted as passing.
+Status: **NOT DONE; production promotion blocked.** Evidence below is from the feature branch, not production. Real Gemini connection and compact structured text extraction passed on 2026-09-08; the complete acceptance matrix has not passed.
 
 ## A. Source audit
 
 - Existing architecture: React 19, Vite 6, TypeScript 5.8, Tailwind 4; component state and browser storage; no application login/database observed. `lint` is TypeScript checking, not an ESLint suite.
-- Google Gemini remains the default provider, centrally configured. Model default remains `gemini-3.7-flash`; authentication and current request compatibility need a real key test.
+- Google Gemini remains the default provider, centrally configured. Real connection and compact structured extraction using `gemini-3.7-flash` passed on the 2026-09-08 Preview.
 - Legacy import used raw DOCX text and direct client AI requests; legacy Word export used HTML `.doc`. Existing three-level workflow remains accessible.
 - Baseline: TypeScript and production build passed; there was no unit test script. Baseline production commit: `fc5fe75942bf4c81136ef2a8b154a9a5a1bd2983`.
 
@@ -63,7 +63,7 @@ Test URL: `https://bien-the-de-lp22y9t4a-quoc-dat4.vercel.app` (initial feature 
 | Unit regression | Schema/formula/shuffle/dependencies/variant/security/import | 21 tests pass after fixes | PASS |
 | TypeScript / lint | `pnpm typecheck`, `pnpm lint` | Pass; lint aliases `tsc --noEmit` | PASS |
 | Production build | `pnpm build` | Pass; existing/new large-chunk warnings remain | PASS |
-| Gemini real tests 1–7 | User-provided valid key | No key supplied; not called | BLOCKED |
+| Gemini real tests 1–7 | User-provided key, explicitly authorized | Connection and compact extraction PASS; variant metadata validation rejected three codes; vision/full repair matrix incomplete | PARTIAL |
 | Full multi-subject E2E | Real import → AI → validate → export | Not completed | NOT RUN |
 | Mobile browser | Actual mobile viewport | Not exposed by current browser surface | NOT RUN |
 | App login | Application account flow | No app authentication observed | SKIPPED |
@@ -76,7 +76,7 @@ Browser logs observed extension metadata errors with `chrome-extension://` sourc
 - Gemini requests now run server-side; BYOK remains session-local, not committed/bundled, and old persistent key storage is removed on migration.
 - Secret-free error messages/logs; upload signature and limits; no macro execution; escaped generated SVG; untrusted-document prompt boundary.
 - BYOK session storage is not a server secret vault and remains subject to same-origin script/XSS risk. Public multi-tenant rate limiting and stronger key storage are future hardening work.
-- Gemini API key: configuration NOT RUN; authentication NOT RUN; real request NOT RUN; model `gemini-3.7-flash`; code security review performed, full security PASS not claimed.
+- Gemini API key: configuration PASS; authentication PASS; real request PASS for connection and compact text extraction; model `gemini-3.7-flash`; code security review performed, full security PASS not claimed. No credential value is recorded here.
 
 ## J. Git
 
@@ -101,3 +101,13 @@ Retest this corrective commit on its new Preview; real Gemini connection and sev
 - Teacher DOCX retest PASS for answer separation: same downloaded fixture imported, answer field `5` and original explanation now populated separately; 2 questions, 2 images, 1 table retained. Caption remains part of content and question type/metadata still need review.
 - Formula export integration PASS for fixture: generated actual DOCX/PDF from shared production exporters with a real SVG rasterizer, rendered all two pages of each. Fraction, root, power/subscript, vector and Greek alpha were rendered, not raw LaTeX; no observed clipping. These integration files were generated locally, separate from the earlier browser downloads.
 - Real Gemini and full acceptance gates remain blocked/not complete. No production changes.
+
+## Real Gemini corrective testing — 2026-09-08
+
+- Preview: `https://bien-the-de-pxhrnb0w0-quoc-dat4.vercel.app`, deployment `dpl_5WpvhBD6V5PqBNXijG44AKqCTeUN`, commit `fca474c60af9ad87f78c24dd73947097f6db2852`, READY.
+- Prior full QuestionModel extraction returned sanitized HTTP 400 INVALID_ARGUMENT; complex schema was a suspected cause, not a confirmed provider diagnostic. Compact AI drafts now map deterministically into the full Zod QuestionModel; invalid answer indices and unsafe/duplicate variable names fail closed.
+- Connection: user-authorized session-local key; clicked real connection test. Actual status: `Kết nối thật thành công: gemini-3.7-flash`. PASS.
+- Structured extraction: manually authored Vietnamese grade-9 fraction MCQ, 1/2 + 1/4, answer B=3/4, explicit explanation. Clicked AI source analysis. Actual: one question, two LaTeX formulas, four options, B selected, original explanation preserved, teacher review required. PASS for this text fixture, not the complete document matrix.
+- Three variants: reviewed original, selected subject variants, created 001/002/003. Actual: generated fraction variants, but all three were rejected by metadata-preservation validation. FAIL; no silent export success claimed.
+- Follow-up fixes: retain assessment metadata from the original rather than letting AI rewrite it; exclude formulas already belonging to explanation/answer/options from standalone question-body export to prevent answer-formula leakage. These fixes need new Preview retesting.
+- Local regression now includes answer-index bounds, variable-name validation, source-owned metadata and solution-formula exclusion. Production unchanged.

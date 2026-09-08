@@ -4,12 +4,13 @@ import { z } from 'zod';
 import { QuestionSchema, VisualSchema } from '../src/engine/schema';
 import { sampleDocument } from '../src/engine/sample';
 import { normalizeLatex, formulaError, validateQuestion, syncVisuals, syncQuestionFromData, composeExam, exportErrors, answerText, fromLegacy, hash } from '../src/engine/core';
-import { numericVariant, mutationErrors, adapterFor } from '../src/engine/variant';
+import { numericVariant, mutationErrors, adapterFor, createVariant } from '../src/engine/variant';
 import { importText, detectFile } from '../src/engine/import';
 import { cleanAndParseJSON } from '../src/services/fileExtractService';
 import { shuffleSingleQuestion } from '../src/utils/shuffleExamUtils';
 import { apiError } from '../api/ai';
 import { AIQuestionDraftSchema, draftToQuestion } from '../src/engine/ai';
+import { standaloneQuestionFormulas } from '../src/engine/export';
 
 test('versioned question schema rejects malformed AI',()=>{assert.equal(QuestionSchema.safeParse({version:2,content:3}).success,false);assert.ok(z.toJSONSchema(QuestionSchema));});
 test('visual schema rejects arbitrary SVG/remote image URLs',()=>{assert.equal(VisualSchema.safeParse({kind:'asset',dataUrl:'javascript:alert(1)'}).success,false);});
@@ -58,4 +59,23 @@ test('Gemini wire schema stays compact and maps into full QuestionModel',()=>{
  const variable={name:' x ',value:1,policy:'MUTABLE' as const,min:null,max:null,unit:''};
  assert.equal(draftToQuestion({...draft,variables:[variable]},{id:'ai-q',number:1,documentId:'doc'}).variables.x.value,1);
  for(const names of [['x',' x '],['__proto__'],['']]) assert.throws(()=>draftToQuestion({...draft,variables:names.map(name=>({...variable,name}))},{id:'ai-q',number:1,documentId:'doc'}));
+ const original=sampleDocument().questions[0];
+ const variant=draftToQuestion(draft,{id:original.id,number:1,documentId:'doc',original});
+ for(const key of ['subject','grade','topic','difficulty','type'] as const) assert.equal(variant[key],original[key]);
+});
+test('answer and option formulas cannot leak into student question body',()=>{
+ const q=sampleDocument().questions[0];
+ q.content='Tính $\\frac{1}{2}+\\frac{1}{4}$.';
+ q.explanation='Quy đồng: $\\frac{2}{4} + \\frac{1}{4} = \\frac{3}{4}$.';
+ q.options=[{id:'a',text:'$\\frac{3}{4}$'}];
+ const values=['\\frac{1}{2}+\\frac{1}{4}','\\frac{2}{4}+\\frac{1}{4}=\\frac{3}{4}','\\frac{3}{4}','x^2'];
+ q.formulas=values.map((latex,i)=>({id:String(i),latex,rawSource:latex,confidence:1,needsReview:false,kind:'math'}));
+ assert.deepEqual(standaloneQuestionFormulas(q).map(f=>f.latex),['x^2']);
+});
+test('AI variant requests include distinct seeds instead of sharing cached results',async()=>{
+ const q=sampleDocument().questions[0];q.validation.reviewed=true;q.templates=undefined;q.solver=undefined;
+ const requests:string[]=[];
+ const provider={extract:async(doc:any)=>doc,validate:async()=>({valid:true,errors:[],warnings:[]}),generateVariant:async(original:any,strategy:string)=>{requests.push(strategy);return structuredClone(original);}};
+ await createVariant(q,'NUMERIC_VARIANT',1,provider);await createVariant(q,'NUMERIC_VARIANT',2,provider);
+ assert.match(requests[0],/variation seed 1/);assert.ok(requests.some(s=>s.includes('variation seed 2')));
 });

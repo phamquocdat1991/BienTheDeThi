@@ -19,6 +19,13 @@ type Segment={type:'text';text:string}|{type:'image';image:Raster};
 async function rich(text:string,raster:Rasterizer):Promise<Segment[]>{const out:Segment[]=[];let last=0;for(const m of text.matchAll(/\$\$([\s\S]*?)\$\$|\$([^$\n]+)\$/g)){if(m.index!>last)out.push({type:'text',text:text.slice(last,m.index)});out.push({type:'image',image:await raster(await formulaSvg(m[1]??m[2]))});last=m.index!+m[0].length;}if(last<text.length)out.push({type:'text',text:text.slice(last)});return out;}
 function guard(exams:ExamModel[]){const errors=exams.flatMap(e=>exportErrors(e).map(s=>`Mã ${e.code}: ${s}`));if(errors.length)throw Error(errors.slice(0,12).join('\n'));}
 function imageDimensions(image:Raster,maxWidth:number,maxHeight:number){const scale=Math.min(1,maxWidth/image.width,maxHeight/image.height);return {width:image.width*scale,height:image.height*scale};}
+// Extractors can collect formulas from answers/options as well as the stem.
+// These already have their own rendering location and must not leak into the stem.
+export function standaloneQuestionFormulas(q:QuestionModel){
+ const compact=(text:string)=>text.replace(/\s+/g,'');
+ const located=[q.content,q.explanation,q.correctAnswer.text,...q.options.map(o=>o.text)].map(compact);
+ return q.formulas.filter(f=>{const latex=compact(f.latex),raw=compact(f.rawSource);return !located.some(text=>(latex&&text.includes(latex))||(raw&&text.includes(raw)));});
+}
 export async function createDocx(exams:ExamModel[],raster:Rasterizer=browserRasterize):Promise<Uint8Array>{
  guard(exams);
  const sections:any[]=[];
@@ -29,7 +36,7 @@ export async function createDocx(exams:ExamModel[],raster:Rasterizer=browserRast
   if(exam.exportMode!=='answers')for(const q of exam.questions){
    if(q.sectionId!==section){section=q.sectionId;const name=exam.sections.find(s=>s.id===section)?.title;if(name)children.push(await paragraph(name,true));}
    children.push(await paragraph(`Câu ${q.number}. ${q.content}`,true));
-   for(const f of q.formulas)if(!q.content.includes(f.latex))children.push(await paragraph(`$${f.latex}$`));
+   for(const f of standaloneQuestionFormulas(q))children.push(await paragraph(`$${f.latex}$`));
    for(const table of q.tables){children.push(await paragraph(table.caption));const rows=[table.headers,...table.rows];children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:await Promise.all(rows.map(async(r,i)=>new TableRow({tableHeader:i===0,children:await Promise.all(r.map(async c=>new TableCell({children:[await paragraph(c)]})))})))}));}
    for(const v of q.visuals.filter(v=>!v.hidden)){const image=await raster(v.kind==='asset'?v.dataUrl:visualSvg(v,q));children.push(new Paragraph({children:[new ImageRun({type:'png',data:image.bytes,transformation:imageDimensions(image,570,340)})]}));children.push(await paragraph(v.description));}
    for(let i=0;i<q.options.length;i++)children.push(await paragraph(`${String.fromCharCode(65+i)}. ${q.options[i].text}`));
@@ -59,7 +66,7 @@ export async function createPdf(exams:ExamModel[],fontBytes?:Uint8Array,raster:R
  for(const exam of exams){code=exam.code;newPage();await line(exam.metadata.school,12);await line(exam.metadata.title,15);await line(`Môn: ${exam.metadata.subject} · Lớp: ${exam.metadata.grade} · Mã đề: ${code}`);await line(`Thời gian: ${exam.metadata.duration||'…'} phút`);
   let section='';
   if(exam.exportMode!=='answers')for(const q of exam.questions){ensure(55);if(q.sectionId!==section){section=q.sectionId;const name=exam.sections.find(s=>s.id===section)?.title;if(name)await line(name,13);}await line(`Câu ${q.number}. ${q.content}`);
-   for(const f of q.formulas)if(!q.content.includes(f.latex))await line(`$${f.latex}$`);
+   for(const f of standaloneQuestionFormulas(q))await line(`$${f.latex}$`);
    for(const table of q.tables){await line(table.caption);const columns=table.headers.length;if(!columns)continue;const cellWidth=usable/columns,size=10;
     const wrap=(text:string)=>{const result:string[]=[];let current='';for(const c of text){if(c==='\n'||font.widthOfTextAtSize(current+c,size)>cellWidth-12){result.push(current);current=c==='\n'?'':c;}else current+=c;}result.push(current);return result;};
     for(const row of [table.headers,...table.rows]){const wrapped=row.map(wrap),height=Math.max(...wrapped.map(a=>a.length))*15+10;if(height>H-2*margin-30)throw Error('Một ô bảng quá dài để vừa trang A4. Chia nhỏ bảng trước khi xuất.');ensure(height);for(let ci=0;ci<columns;ci++){page.drawRectangle({x:margin+ci*cellWidth,y:y-height,width:cellWidth,height,borderWidth:0.5,borderColor:rgb(.4,.4,.4)});wrapped[ci].forEach((t,ri)=>page.drawText(t,{x:margin+ci*cellWidth+6,y:y-15-ri*15,size,font}));}y-=height;}y-=12;

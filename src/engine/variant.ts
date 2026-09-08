@@ -45,13 +45,14 @@ export async function createVariant(q:QuestionModel,strategy:string,seed:number,
  if(!q.validation.reviewed)throw Error(`Câu ${q.number}: cần duyệt đề gốc trước khi tạo biến thể.`);
  if(!adapterFor(q.subject).strategies.includes(strategy))throw Error(`Môn ${q.subject} không cho phép chiến lược này.`);
  if(strategy==='NUMERIC_VARIANT'&&q.solver&&q.templates)return numericVariant(q,seed);
- let candidate=await ai.generateVariant(q,strategy);
+ const seededStrategy=`${strategy}; variation seed ${seed}`;
+ let candidate=await ai.generateVariant(q,seededStrategy);
  // Maximum two structured AI repairs, followed by a fresh validation each time.
  for(let attempt=0;attempt<=2;attempt++){
    const errors=[...mutationErrors(q,candidate),...validateQuestion(candidate).errors,...candidate.validation.errors];
    if(!errors.length)return candidate;
    if(attempt===2)return {...candidate,validation:{...candidate.validation,status:'failed',reviewed:false,errors}};
-   candidate=await ai.generateVariant(q,`${strategy}; Repair these previous errors: ${errors.join('; ')}`);
+   candidate=await ai.generateVariant(q,`${seededStrategy}; Repair these previous errors: ${errors.join('; ')}`);
  }
  return candidate;
 }

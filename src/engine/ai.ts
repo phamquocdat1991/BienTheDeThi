@@ -26,7 +26,10 @@ export function draftToQuestion(draft:AIQuestionDraft,base:{id:string;number:num
   const optionIds=draft.options.map((_,i)=>base.original?.options[i]?.id||`${base.id}-o${i+1}`);
   const variables=Object.fromEntries(draft.variables.map(v=>[v.name.trim(),{value:v.value,policy:v.policy,...(v.min===null?{}:{min:v.min}),...(v.max===null?{}:{max:v.max}),unit:v.unit}]));
   const question=QuestionSchema.parse({
-    ...(base.original||{}),id:base.id,version:2,number:base.number,subject:draft.subject,grade:draft.grade,topic:draft.topic,difficulty:draft.difficulty,type:draft.type,
+    ...(base.original||{}),id:base.id,version:2,number:base.number,
+    // Assessment metadata is owned by the source question, not a mutable AI field.
+    // The independent validator still checks the generated content against it.
+    subject:base.original?.subject??draft.subject,grade:base.original?.grade??draft.grade,topic:base.original?.topic??draft.topic,difficulty:base.original?.difficulty??draft.difficulty,type:base.original?.type??draft.type,
     source:base.source||{documentId:base.documentId},content:draft.content,originalContent:base.original?.originalContent||draft.content,variables,
     formulas:draft.formulas.map((f,i)=>({...f,id:base.original?.formulas[i]?.id||`${base.id}-f${i+1}`,needsReview:f.confidence<0.9})),
     tables:draft.tables.map((t,i)=>({...t,id:base.original?.tables[i]?.id||`${base.id}-t${i+1}`,mergedCells:[]})),
