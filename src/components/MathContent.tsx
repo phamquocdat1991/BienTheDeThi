@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 interface MathContentProps {
   content: string;
@@ -65,13 +67,13 @@ function parseMathSegments(text: string): Segment[] {
  */
 function renderKatexString(latex: string, displayMode = false): string | null {
   try {
-    const katex = (window as any).katex;
+
     if (katex && typeof katex.renderToString === 'function') {
       return katex.renderToString(latex, {
         displayMode,
         throwOnError: false,
         strict: false,
-        trust: true,
+        trust: false,
       });
     }
   } catch (err) {
@@ -94,7 +96,7 @@ export const MathContent: React.FC<MathContentProps> = ({
     return <span className={className}>{content}</span>;
   }
 
-  const Tag = inline ? 'span' : 'div';
+  const Tag = 'span';
 
   return (
     <Tag className={`math-content leading-relaxed ${className}`}>
@@ -109,9 +111,9 @@ export const MathContent: React.FC<MathContentProps> = ({
         if (html) {
           if (isDisplay) {
             return (
-              <div
+              <span
                 key={idx}
-                className="my-2 overflow-x-auto text-center"
+                className="block my-2 overflow-x-auto text-center"
                 dangerouslySetInnerHTML={{ __html: html }}
               />
             );

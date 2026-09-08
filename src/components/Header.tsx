@@ -1,105 +1,21 @@
 import React from 'react';
-import { BookOpenCheck, RotateCcw, ShieldCheck, Key, Sparkles, ExternalLink, History } from 'lucide-react';
+import { BookOpenCheck, Plus, ShieldCheck, Settings2, ExternalLink, History, ArrowUpRight } from 'lucide-react';
 import { ExamWorkflowState } from '../types';
 import { VisitCounter } from './VisitCounter';
-
-interface HeaderProps {
-  workflowState: ExamWorkflowState;
-  hasApiKey: boolean;
-  onOpenApiKeyModal: () => void;
-  onOpenHistoryModal: () => void;
-  onReset: () => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({
-  workflowState,
-  hasApiKey,
-  onOpenApiKeyModal,
-  onOpenHistoryModal,
-  onReset,
-}) => {
-  const isStarted = workflowState !== 'EMPTY';
-
-  return (
-    <header className="bg-[#1E293B] text-white border-b border-[#334155] sticky top-0 z-30 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2.5 flex flex-wrap items-center justify-between gap-3">
-        {/* Brand & Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] flex items-center justify-center shadow-inner text-white font-bold shrink-0">
-            <BookOpenCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-                AI BIẾN THỂ ĐỀ THI <span className="text-[#38BDF8] font-bold">3 CẤP ĐỘ</span>
-              </h1>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40">
-                Sư phạm Chuẩn hóa GDPT 2018
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 flex items-center gap-1.5 flex-wrap">
-              <span>Phát triển bởi: <strong className="text-amber-300 font-bold">Anh Giáo PHẠM QUỐC ĐẠT</strong></span>
-              <span className="hidden md:inline text-slate-500">•</span>
-              <span className="hidden md:inline text-slate-400">Phân tích đề gốc • Tự giải lại • Kiểm định 8 tiêu chí</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Center: Visit Counter */}
-        <div className="hidden md:flex items-center">
-          <VisitCounter />
-        </div>
-
-        {/* Right Actions */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Dedicated Red Action: "Lấy API key để sử dụng app" per AI_INSTRUCTIONS.md */}
-          <a
-            href="https://aistudio.google.com/api-keys"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer"
-            title="Lấy API Key Google miễn phí tại Google AI Studio"
-          >
-            <ExternalLink className="w-3 h-3" />
-            <span>Lấy API key để sử dụng app</span>
-          </a>
-
-          {/* API Key Settings Button */}
-          <button
-            onClick={onOpenApiKeyModal}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer active:scale-95 shadow-xs ${
-              hasApiKey
-                ? 'bg-[#334155] hover:bg-slate-600 text-slate-100 border-slate-600'
-                : 'bg-amber-950/90 hover:bg-amber-900 text-amber-200 border-amber-500/80'
-            }`}
-            title="Cài đặt API Key & Model"
-          >
-            <Key className={`w-3.5 h-3.5 ${hasApiKey ? 'text-emerald-400' : 'text-amber-400'}`} />
-            <span>{hasApiKey ? 'Cài đặt API' : 'Nhập Key'}</span>
-          </button>
-
-          {/* History Button */}
-          <button
-            onClick={onOpenHistoryModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#334155] hover:bg-slate-600 text-slate-100 hover:text-white text-xs font-bold transition border border-slate-600 cursor-pointer active:scale-95 shadow-xs"
-            title="Xem danh sách đề thi đã tạo & sao lưu"
-          >
-            <History className="w-3.5 h-3.5 text-amber-400" />
-            <span>Lịch sử đề</span>
-          </button>
-
-          {isStarted && (
-            <button
-              onClick={onReset}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#334155] hover:bg-slate-600 text-slate-100 hover:text-white text-xs font-semibold transition border border-slate-600 cursor-pointer shadow-xs active:scale-95"
-              title="Bắt đầu phân tích đề mới"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-300" />
-              <span>Bắt đầu lại</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </header>
-  );
+interface HeaderProps { workflowState: ExamWorkflowState; hasApiKey: boolean; onOpenApiKeyModal: () => void; onOpenHistoryModal: () => void; onReset: () => void; }
+export const Header: React.FC<HeaderProps> = ({ workflowState, hasApiKey, onOpenApiKeyModal, onOpenHistoryModal, onReset }) => {
+  const busy = workflowState === 'ANALYZING' || workflowState.startsWith('GENERATING');
+  return <>
+    <aside className="workspace-sidebar no-print" aria-label="Không gian giáo viên">
+      <a className="brand" href="#main-content"><span className="brand-mark"><BookOpenCheck size={23}/></span><span>Biến thể đề thi<small>TEACHER WORKSPACE</small></span></a>
+      <div className="sidebar-caption">KHÔNG GIAN LÀM VIỆC</div>
+      <button className="sidebar-link active" onClick={onReset} disabled={busy}><Plus size={18}/>Tạo đề mới<ArrowUpRight size={15} className="ml-auto"/></button>
+      <button className="sidebar-link" onClick={onOpenHistoryModal} disabled={busy}><History size={18}/>Lịch sử đề</button>
+      <button className="sidebar-link" onClick={onOpenApiKeyModal} disabled={busy}><Settings2 size={18}/>Cài đặt AI</button>
+      <div className="sidebar-guide"><span className="guide-symbol">3</span><h2>Từ một đề gốc,<br/>mở rộng cách tư duy.</h2><p>Đổi dữ kiện · Dạng tương đương · Phân hóa và vận dụng</p><div><ShieldCheck size={15}/>Hướng tới GDPT 2018</div></div>
+      <div className="sidebar-bottom"><a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener noreferrer">Lấy API key Google<ExternalLink size={14}/></a><VisitCounter/><div className="author"><span>Đ</span><div>Anh Giáo PHẠM QUỐC ĐẠT<small>Phát triển ứng dụng giáo dục</small></div></div></div>
+    </aside>
+    <header className="workspace-topbar"><div><span className="desktop-breadcrumb">Không gian giáo viên <span>/</span></span><strong>Biên soạn đề thi</strong><span className="version-pill">3 cấp độ</span></div><div className="topbar-actions"><span className={`api-status ${hasApiKey ? 'configured' : ''}`}><i/>{hasApiKey ? 'Đã lưu cấu hình AI' : 'Chưa cấu hình AI'}</span><button onClick={onOpenApiKeyModal} disabled={busy} className="topbar-settings" aria-label="Cài đặt AI"><Settings2 size={17}/></button></div></header>
+    <nav className="mobile-actions no-print" aria-label="Thao tác nhanh"><button onClick={onReset} disabled={busy}><Plus size={16}/>Tạo đề mới</button><button onClick={onOpenHistoryModal} disabled={busy}><History size={16}/>Lịch sử đề</button><button onClick={onOpenApiKeyModal} disabled={busy}><Settings2 size={16}/>Cài đặt AI</button></nav>
+  </>;
 };

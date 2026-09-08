@@ -1,3 +1,4 @@
+import { escapeExportData } from './htmlSafety';
 import { GeneratedExam, VariantQuestion, QuestionOption } from '../types';
 
 export interface ShuffledExamCode {
@@ -34,7 +35,7 @@ function shuffleArray<T>(array: T[]): T[] {
  * Trộn 1 câu hỏi trắc nghiệm: hoán vị phương án A, B, C, D và cập nhật đáp án đúng
  */
 function shuffleSingleQuestion(q: VariantQuestion, newNumber: number): VariantQuestion {
-  if (!q.options || q.options.length === 0 || q.type === 'essay') {
+  if (q.type !== 'multiple_choice' || !q.options || q.options.length === 0) {
     return {
       ...q,
       number: newNumber,
@@ -46,6 +47,8 @@ function shuffleSingleQuestion(q: VariantQuestion, newNumber: number): VariantQu
     (opt) => opt.label.trim().toUpperCase() === q.correctAnswer.trim().toUpperCase()
   );
 
+  // If the key cannot be matched, preserve the original option/answer mapping.
+  if (!originalCorrectOption) return { ...q, number: newNumber };
   // Đảo thứ tự các phương án
   const shuffledRawOptions = shuffleArray(q.options);
 
@@ -55,7 +58,7 @@ function shuffleSingleQuestion(q: VariantQuestion, newNumber: number): VariantQu
 
   const newOptions: QuestionOption[] = shuffledRawOptions.map((opt, idx) => {
     const label = labels[idx] || String.fromCharCode(65 + idx);
-    if (originalCorrectOption && opt.text === originalCorrectOption.text) {
+    if (originalCorrectOption && opt.label === originalCorrectOption.label) {
       newCorrectAnswer = label;
     }
     return {
@@ -83,7 +86,9 @@ export function generateShuffledExams(
 
   codeList.forEach((code) => {
     // Đảo thứ tự câu hỏi
-    const shuffledQuestionsOrder = shuffleArray(exam.questions);
+    const groups = new Map<string, VariantQuestion[]>();
+    exam.questions.forEach(q => { const key = q.sectionId || q.type; groups.set(key, [...(groups.get(key) || []), q]); });
+    const shuffledQuestionsOrder = [...groups.values()].flatMap(group => shuffleArray(group));
 
     // Đảo phương án từng câu và gán số thứ tự mới
     const finalQuestions: VariantQuestion[] = shuffledQuestionsOrder.map((q, idx) =>
@@ -134,6 +139,8 @@ export function exportShuffledExamsToWord(
   result: ShuffleExamResult,
   metadata: { subject?: string; grade?: string; durationMinutes?: number }
 ): void {
+  result = escapeExportData(result);
+  metadata = escapeExportData(metadata);
   const wordBaseCss = `
     @page { size: A4 portrait; margin: 2cm; }
     body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.4; color: #000; }
@@ -224,7 +231,7 @@ export function exportShuffledExamsToWord(
                   ? `
                 <tr>
                   ${q.options
-                    .slice(2, 4)
+                    .slice(2)
                     .map((opt) => `<td><strong>${opt.label}.</strong> ${opt.text}</td>`)
                     .join('')}
                 </tr>

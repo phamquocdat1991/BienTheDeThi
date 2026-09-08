@@ -50,6 +50,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       setGeminiKey(config.geminiKey);
       setAgentPlatformKey(config.agentPlatformKey);
       setSelectedModel(config.selectedModel);
+      setShowKey(false);
       setSavedSuccess(false);
       setErrorMessage(null);
     }
@@ -110,15 +111,15 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div role="dialog" aria-modal="true" aria-labelledby="api-settings-title" className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Modal */}
         <div className="bg-[#1E293B] text-white p-6 flex items-start justify-between border-b border-[#334155]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0284C7] flex items-center justify-center text-white shadow-inner">
+            <div className="w-10 h-10 rounded-2xl bg-[#4F46E5] flex items-center justify-center text-white shadow-inner">
               <Key className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h3 id="api-settings-title" className="text-lg font-bold text-white flex items-center gap-2">
                 Cài Đặt API Key & Model AI
               </h3>
               <p className="text-xs text-slate-300">
@@ -129,6 +130,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
           <button
             onClick={onClose}
+            aria-label="Đóng cài đặt AI"
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -148,17 +150,17 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 onClick={() => handleProviderChange('gemini')}
                 className={`p-3.5 rounded-2xl border text-left transition flex flex-col gap-1 cursor-pointer ${
                   provider === 'gemini'
-                    ? 'border-[#0284C7] bg-[#F0F9FF] ring-2 ring-[#0284C7]/20 shadow-xs'
+                    ? 'border-[#4F46E5] bg-[#EEF2FF] ring-2 ring-[#4F46E5]/20 shadow-xs'
                     : 'border-slate-200 bg-[#F8FAFC] hover:bg-slate-100/80'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#0284C7]" />
+                    <Sparkles className="w-4 h-4 text-[#4F46E5]" />
                     Gemini API
                   </span>
                   {provider === 'gemini' && (
-                    <CheckCircle2 className="w-4 h-4 text-[#0284C7]" />
+                    <CheckCircle2 className="w-4 h-4 text-[#4F46E5]" />
                   )}
                 </div>
                 <span className="text-[11px] text-slate-500">
@@ -171,7 +173,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 onClick={() => handleProviderChange('agent-platform')}
                 className={`p-3.5 rounded-2xl border text-left transition flex flex-col gap-1 cursor-pointer ${
                   provider === 'agent-platform'
-                    ? 'border-[#0284C7] bg-[#F0F9FF] ring-2 ring-[#0284C7]/20 shadow-xs'
+                    ? 'border-[#4F46E5] bg-[#EEF2FF] ring-2 ring-[#4F46E5]/20 shadow-xs'
                     : 'border-slate-200 bg-[#F8FAFC] hover:bg-slate-100/80'
                 }`}
               >
@@ -205,7 +207,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-bold text-[#0284C7] hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#4F46E5] hover:underline flex items-center gap-1"
               >
                 <span>Lấy API Key miễn phí tại đây</span>
                 <ExternalLink className="w-3 h-3" />
@@ -235,7 +237,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     ? 'border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200'
                     : isCurrentKeyValid
                     ? 'border-[#10B981] focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/20'
-                    : 'border-slate-300 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20'
+                    : 'border-slate-300 focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20'
                 }`}
               />
 
@@ -289,7 +291,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     onClick={() => setSelectedModel(m.id)}
                     className={`w-full p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? 'border-[#0284C7] bg-[#F0F9FF] ring-2 ring-[#0284C7]/20 shadow-xs'
+                        ? 'border-[#4F46E5] bg-[#EEF2FF] ring-2 ring-[#4F46E5]/20 shadow-xs'
                         : 'border-slate-200 bg-white hover:bg-slate-50'
                     }`}
                   >
@@ -308,7 +310,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     <div
                       className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                         isSelected
-                          ? 'border-[#0284C7] bg-[#0284C7]'
+                          ? 'border-[#4F46E5] bg-[#4F46E5]'
                           : 'border-slate-300 bg-white'
                       }`}
                     >
@@ -324,7 +326,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5 text-xs text-slate-600">
             <ShieldCheck className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
             <p className="text-[11px] leading-relaxed">
-              <strong>Bảo mật tuyệt đối:</strong> API Key được lưu an toàn duy nhất trên trình duyệt của bạn (<code className="bg-slate-200 px-1 py-0.5 rounded">localStorage</code>) và chỉ được gửi trực tiếp tới máy chủ Google API để tạo nội dung.
+              <strong>Lưu trên thiết bị:</strong> API Key được lưu trên trình duyệt của bạn (<code className="bg-slate-200 px-1 py-0.5 rounded">localStorage</code>) và chỉ được gửi trực tiếp tới máy chủ Google API để tạo nội dung.
             </p>
           </div>
 
@@ -358,7 +360,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow-md shadow-[#0284C7]/20 transition cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-bold shadow-md shadow-[#4F46E5]/20 transition cursor-pointer"
           >
             <CheckCircle2 className="w-4 h-4" />
             <span>Lưu Cấu Hình</span>

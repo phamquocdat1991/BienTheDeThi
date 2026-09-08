@@ -1,3 +1,4 @@
+import { normalizeAnalysis, validateQuestions } from '../utils/examIntegrity';
 import {
   ExamWorkflowState,
   ExamAnalysis,
@@ -41,8 +42,8 @@ const MAX_HISTORY_ITEMS = 15;
  */
 export function saveCurrentSession(session: ExamSessionData): void {
   try {
-    session.updatedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(session));
+    // Keep binary sources out of the limited localStorage quota. Analysis retains the extracted questions.
+    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(compactSession(session)));
   } catch (error) {
     console.warn('[Session] Không thể lưu phiên vào localStorage (có thể vượt dung lượng):', error);
   }
@@ -55,7 +56,7 @@ export function loadCurrentSession(): ExamSessionData | null {
   try {
     const raw = localStorage.getItem(STORAGE_SESSION_KEY);
     if (!raw) return null;
-    const data = JSON.parse(raw) as ExamSessionData;
+    const data = parseSessionFromJson(raw);
     if (data && data.workflowState && data.workflowState !== 'EMPTY') {
       return data;
     }
@@ -95,7 +96,7 @@ export function saveToHistory(session: ExamSessionData): void {
       totalQuestions: session.examAnalysis.questions?.length || 0,
       completedVariantsCount: completedCount,
       savedAt: new Date().toISOString(),
-      session,
+      session: compactSession(session),
     };
 
     // Loại bỏ mục cũ nếu trùng id, chèn lên đầu
@@ -115,7 +116,9 @@ export function getExamHistory(): StoredExamHistoryItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_HISTORY_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as StoredExamHistoryItem[];
+    const items=JSON.parse(raw);
+    if(!Array.isArray(items)) return [];
+    return items.flatMap(item => {try {return [{...item,session:parseSessionFromJson(JSON.stringify(item.session))}];} catch {return [];}});
   } catch (error) {
     console.error('[History] Lỗi khi đọc lịch sử đề:', error);
     return [];
@@ -157,8 +160,22 @@ export function exportSessionAsJson(session: ExamSessionData): void {
  */
 export function parseSessionFromJson(jsonString: string): ExamSessionData {
   const data = JSON.parse(jsonString) as ExamSessionData;
-  if (!data.examAnalysis || !data.workflowState) {
-    throw new Error('Tệp JSON không chứa dữ liệu đề thi hợp lệ.');
-  }
+  data.examAnalysis = normalizeAnalysis(data?.examAnalysis);
+  if(data.exam2&&!data.exam1||data.exam3&&!data.exam2)throw new Error('Phiên làm việc bị thiếu đề biến thể ở bước trước.');
+  [data.exam1,data.exam2,data.exam3].forEach((exam,index)=>{if(exam){validateQuestions(exam.questions);if(exam.level!==index+1||!exam.metadata||typeof exam.title!=='string')throw new Error('Dữ liệu đề biến thể không hợp lệ.');}});
+  data.workflowState = data.exam3 ? 'COMPLETE' : data.exam2 ? 'EXAM_2_COMPLETE' : data.exam1 ? 'EXAM_1_COMPLETE' : 'ANALYZED';
+  const maxStep=data.exam3?6:data.exam2?4:data.exam1?3:2;
+  data.activeStepTab=Number.isInteger(data.activeStepTab)&&data.activeStepTab>=1&&data.activeStepTab<=maxStep?data.activeStepTab:maxStep;
+  data.id=typeof data.id==='string'?data.id:crypto.randomUUID();
+  data.createdAt=data.createdAt||new Date().toISOString();
+  data.updatedAt=data.updatedAt||data.createdAt;
+  data.title=data.title||data.examAnalysis.examMetadata.title;
+  data.subject=data.subject||data.examAnalysis.examMetadata.subject;
+  data.grade=data.grade||data.examAnalysis.examMetadata.grade;
   return data;
+}
+
+function compactSession(session: ExamSessionData): ExamSessionData {
+  const source = session.lastInputSource;
+  return {...session,updatedAt:new Date().toISOString(),lastInputSource:source?{...source,imageBase64:undefined,pdfBase64:undefined}:null};
 }

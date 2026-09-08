@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import type { GoogleGenAI } from '@google/genai';
 import { AiProvider, ApiConfig } from '../types';
 
 // ============================================================================
@@ -184,10 +184,11 @@ export const getActiveApiKey = (config?: ApiConfig): string => {
 // ============================================================================
 // CLIENT FACTORY DÙNG CHUNG (Tuân thủ api.md Mục III)
 // ============================================================================
-export const createGoogleAiClient = (
+export const createGoogleAiClient = async (
   apiKey: string,
   provider: AiProvider = 'gemini'
-): GoogleGenAI => {
+): Promise<GoogleGenAI> => {
+  const { GoogleGenAI } = await import('@google/genai');
   const trimmedKey = apiKey.trim();
   if (!trimmedKey) {
     throw new Error('Vui lòng cấu hình API Key trước khi sử dụng tính năng này.');

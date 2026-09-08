@@ -80,7 +80,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
             <button
               onClick={onGenerateExam1}
               disabled={isLoading}
-              className="w-full lg:w-auto flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] active:bg-[#075985] text-white font-bold text-sm shadow-md shadow-[#0284C7]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full lg:w-auto flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white font-bold text-sm shadow-md shadow-[#4F46E5]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-sky-200" />
               <span>TIẾP TỤC: TẠO ĐỀ BIẾN THỂ 1 (ĐỔI SỐ LIỆU)</span>
@@ -93,7 +93,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-[#F8FAFC] rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold mb-1">
-              <BookOpen className="w-4 h-4 text-[#0284C7]" />
+              <BookOpen className="w-4 h-4 text-[#4F46E5]" />
               <span>Môn & Khối Lớp</span>
             </div>
             <p className="text-base font-bold text-slate-900">
@@ -103,7 +103,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
 
           <div className="bg-[#F8FAFC] rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold mb-1">
-              <Clock className="w-4 h-4 text-[#0284C7]" />
+              <Clock className="w-4 h-4 text-[#4F46E5]" />
               <span>Thời Gian Làm Bài</span>
             </div>
             <p className="text-base font-bold text-slate-900">
@@ -150,7 +150,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
             />
             <div
               style={{ width: `${Math.max(compPct, 5)}%` }}
-              className="bg-[#0284C7] transition-all hover:opacity-90"
+              className="bg-[#4F46E5] transition-all hover:opacity-90"
               title={`Thông hiểu: ${diffLevels.comprehensionCount || 0} câu (${compPct}%)`}
             />
             <div
@@ -171,7 +171,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
               <span>Nhận biết: <strong>{diffLevels.recognitionCount || 0} câu</strong> ({recPct}%)</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#0284C7]"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#4F46E5]"></span>
               <span>Thông hiểu: <strong>{diffLevels.comprehensionCount || 0} câu</strong> ({compPct}%)</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-slate-700">
@@ -191,7 +191,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
         {/* Knowledge & Objectives */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <BookOpen className="w-5 h-5 text-[#0284C7]" />
+            <BookOpen className="w-5 h-5 text-[#4F46E5]" />
             <h3 className="text-base font-bold text-slate-900">Mục Tiêu & Đơn Vị Kiến Thức</h3>
           </div>
 
@@ -203,7 +203,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
                   {analysis.topics.map((topic, i) => (
                     <span
                       key={i}
-                      className="px-2.5 py-1 rounded-lg bg-[#F0F9FF] text-[#0369A1] text-xs font-semibold border border-[#BAE6FD]"
+                      className="px-2.5 py-1 rounded-lg bg-[#EEF2FF] text-[#4338CA] text-xs font-semibold border border-[#C7D2FE]"
                     >
                       {topic}
                     </span>
@@ -218,7 +218,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
                 <ul className="space-y-1">
                   {analysis.learningObjectives.map((obj, i) => (
                     <li key={i} className="text-xs text-slate-700 flex items-start gap-1.5">
-                      <span className="text-[#0284C7] font-bold">•</span>
+                      <span className="text-[#4F46E5] font-bold">•</span>
                       <span>{obj}</span>
                     </li>
                   ))}
@@ -247,7 +247,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
         {/* Formulas, Laws & Rules */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Sigma className="w-5 h-5 text-[#0284C7]" />
+            <Sigma className="w-5 h-5 text-[#4F46E5]" />
             <h3 className="text-base font-bold text-slate-900">Công Thức, Định Luật & Ràng Buộc</h3>
           </div>
 
@@ -274,7 +274,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
                 <ul className="space-y-1">
                   {analysis.theorems.map((th, i) => (
                     <li key={i} className="text-xs text-slate-700 flex items-start gap-1.5">
-                      <span className="text-[#0284C7] font-bold">•</span>
+                      <span className="text-[#4F46E5] font-bold">•</span>
                       <span>{th}</span>
                     </li>
                   ))}
@@ -305,7 +305,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileCheck2 className="w-5 h-5 text-[#0284C7]" />
+            <FileCheck2 className="w-5 h-5 text-[#4F46E5]" />
             <h3 className="text-base font-bold text-slate-900">
               Danh Sách Câu Hỏi Đề Gốc Đã Bóc Tách ({analysis.questions?.length || 0} câu)
             </h3>
@@ -313,7 +313,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
 
           <button
             onClick={() => setShowAllQuestions(!showAllQuestions)}
-            className="text-xs font-bold text-[#0284C7] hover:text-[#0369A1] flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-[#4F46E5] hover:text-[#4338CA] flex items-center gap-1 cursor-pointer"
           >
             {showAllQuestions ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             <span>{showAllQuestions ? 'Thu gọn danh sách' : 'Mở rộng danh sách'}</span>
@@ -337,7 +337,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
                             q.difficulty === 'Nhận biết'
                               ? 'bg-[#DCFCE7] text-[#15803D]'
                               : q.difficulty === 'Thông hiểu'
-                              ? 'bg-[#E0F2FE] text-[#0369A1]'
+                              ? 'bg-[#E0E7FF] text-[#4338CA]'
                               : q.difficulty === 'Vận dụng'
                               ? 'bg-[#FEF3C7] text-[#B45309]'
                               : 'bg-rose-100 text-rose-800'
@@ -391,7 +391,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
                         <div className="pt-2">
                           <button
                             onClick={() => toggleQuestionExpand(q.id)}
-                            className="text-[11px] font-bold text-[#0284C7] hover:underline flex items-center gap-1 cursor-pointer"
+                            className="text-[11px] font-bold text-[#4F46E5] hover:underline flex items-center gap-1 cursor-pointer"
                           >
                             <span>{isExpanded ? 'Ẩn lời giải gốc' : 'Xem đáp án & lời giải gốc'}</span>
                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -423,9 +423,9 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
       </div>
 
       {/* Bottom CTA Banner */}
-      <div className="p-6 rounded-2xl bg-[#F0F9FF] border border-[#BAE6FD] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl bg-[#EEF2FF] border border-[#C7D2FE] flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h4 className="text-base font-bold text-[#0369A1]">
+          <h4 className="text-base font-bold text-[#4338CA]">
             Sẵn sàng tiến hành sinh Đề 1 (Thay đổi số liệu/dữ kiện)
           </h4>
           <p className="text-xs text-slate-600 mt-0.5">
@@ -436,7 +436,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
         <button
           onClick={onGenerateExam1}
           disabled={isLoading}
-          className="shrink-0 flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] active:bg-[#075985] text-white font-bold text-sm shadow-md shadow-[#0284C7]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="shrink-0 flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white font-bold text-sm shadow-md shadow-[#4F46E5]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           <Sparkles className="w-4 h-4" />
           <span>BẮT ĐẦU TẠO ĐỀ 1 NGAY</span>

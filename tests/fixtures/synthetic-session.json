@@ -1,0 +1,831 @@
+{
+  "id": "qa-synthetic-session",
+  "title": "ĐỀ KIỂM THỬ GIAO DIỆN — KHÔNG PHẢI KẾT QUẢ AI",
+  "subject": "Toán học",
+  "grade": "Lớp 10",
+  "createdAt": "2026-09-05T18:00:00Z",
+  "updatedAt": "2026-09-05T18:00:00Z",
+  "workflowState": "COMPLETE",
+  "activeStepTab": 6,
+  "examAnalysis": {
+    "examMetadata": {
+      "title": "ĐỀ KIỂM THỬ GIAO DIỆN — KHÔNG PHẢI KẾT QUẢ AI",
+      "subject": "Toán học",
+      "grade": "Lớp 10",
+      "durationMinutes": 15,
+      "totalQuestions": 4,
+      "totalPoints": 10
+    },
+    "subjects": [
+      "Toán học"
+    ],
+    "grade": "Lớp 10",
+    "questions": [
+      {
+        "id": "q1",
+        "number": 1,
+        "originalQuestionId": "o1",
+        "sectionId": "tn",
+        "questionText": "Giải phương trình $x+2=5$.",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "A",
+        "points": 1,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q2",
+        "number": 2,
+        "originalQuestionId": "o2",
+        "sectionId": "tn",
+        "questionText": "Giá trị của $\\frac{6}{3}$ là bao nhiêu?",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "B",
+        "points": 3,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q3",
+        "number": 3,
+        "originalQuestionId": "o3",
+        "sectionId": "tl",
+        "questionText": "Trình bày cách giải phương trình $2x+1=7$.",
+        "type": "essay",
+        "correctAnswer": "x = 3",
+        "points": 4,
+        "difficulty": "Thông hiểu",
+        "explanation": "2x = 6 nên x = 3.",
+        "solveSteps": [
+          "Trừ 1 hai vế.",
+          "Chia hai vế cho 2."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      },
+      {
+        "id": "q4",
+        "number": 4,
+        "originalQuestionId": "o4",
+        "sectionId": "ds",
+        "questionText": "Xác định tính đúng sai của từng mệnh đề.",
+        "type": "true_false",
+        "options": [
+          {
+            "label": "a",
+            "text": "$2+2=4$"
+          },
+          {
+            "label": "b",
+            "text": "$3+3=7$"
+          }
+        ],
+        "correctAnswer": "a) Đúng; b) Sai",
+        "points": 2,
+        "difficulty": "Nhận biết",
+        "explanation": "2+2=4; 3+3=6.",
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      }
+    ],
+    "sections": [
+      {
+        "id": "tn",
+        "title": "I. Trắc nghiệm",
+        "questionIds": [
+          "q1",
+          "q2"
+        ]
+      },
+      {
+        "id": "tl",
+        "title": "II. Tự luận",
+        "questionIds": [
+          "q3"
+        ]
+      },
+      {
+        "id": "ds",
+        "title": "III. Đúng / sai",
+        "questionIds": [
+          "q4"
+        ]
+      }
+    ],
+    "topics": [
+      "Phương trình",
+      "Phép tính"
+    ],
+    "questionTypes": [
+      "multiple_choice",
+      "essay",
+      "true_false"
+    ],
+    "difficultyLevels": {
+      "recognitionCount": 3,
+      "comprehensionCount": 1,
+      "applicationCount": 0,
+      "advancedApplicationCount": 0
+    },
+    "learningObjectives": [
+      "Kiểm thử các chức năng ứng dụng"
+    ],
+    "knowledgeUnits": [],
+    "skills": [],
+    "formulas": [
+      "$x+2=5$"
+    ],
+    "laws": [],
+    "theorems": [],
+    "principles": [],
+    "constraints": [],
+    "answerInformation": "Đáp án mẫu",
+    "warnings": [
+      "Bộ dữ liệu tổng hợp chỉ phục vụ kiểm thử."
+    ],
+    "scoringStructure": {
+      "pointsPerQuestionType": {
+        "multiple_choice": 4,
+        "essay": 4,
+        "true_false": 2
+      },
+      "total": 10
+    }
+  },
+  "lastInputSource": {
+    "type": "text",
+    "rawText": "Đề kiểm thử tổng hợp, không phải AI sinh."
+  },
+  "exam1": {
+    "level": 1,
+    "levelName": "Biến thể 1",
+    "levelDescription": "Dữ liệu tổng hợp dùng kiểm thử tương tác.",
+    "title": "Đề kiểm thử — Biến thể 1",
+    "metadata": {
+      "title": "ĐỀ KIỂM THỬ GIAO DIỆN — KHÔNG PHẢI KẾT QUẢ AI",
+      "subject": "Toán học",
+      "grade": "Lớp 10",
+      "durationMinutes": 15,
+      "totalQuestions": 4,
+      "totalPoints": 10
+    },
+    "sections": [
+      {
+        "id": "tn",
+        "title": "I. Trắc nghiệm",
+        "questionIds": [
+          "q1",
+          "q2"
+        ]
+      },
+      {
+        "id": "tl",
+        "title": "II. Tự luận",
+        "questionIds": [
+          "q3"
+        ]
+      },
+      {
+        "id": "ds",
+        "title": "III. Đúng / sai",
+        "questionIds": [
+          "q4"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "number": 1,
+        "originalQuestionId": "o1",
+        "sectionId": "tn",
+        "questionText": "Giải phương trình $x+2=5$.",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "A",
+        "points": 1,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q2",
+        "number": 2,
+        "originalQuestionId": "o2",
+        "sectionId": "tn",
+        "questionText": "Giá trị của $\\frac{6}{3}$ là bao nhiêu?",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "B",
+        "points": 3,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q3",
+        "number": 3,
+        "originalQuestionId": "o3",
+        "sectionId": "tl",
+        "questionText": "Trình bày cách giải phương trình $2x+1=7$.",
+        "type": "essay",
+        "correctAnswer": "x = 3",
+        "points": 4,
+        "difficulty": "Thông hiểu",
+        "explanation": "2x = 6 nên x = 3.",
+        "solveSteps": [
+          "Trừ 1 hai vế.",
+          "Chia hai vế cho 2."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      },
+      {
+        "id": "q4",
+        "number": 4,
+        "originalQuestionId": "o4",
+        "sectionId": "ds",
+        "questionText": "Xác định tính đúng sai của từng mệnh đề.",
+        "type": "true_false",
+        "options": [
+          {
+            "label": "a",
+            "text": "$2+2=4$"
+          },
+          {
+            "label": "b",
+            "text": "$3+3=7$"
+          }
+        ],
+        "correctAnswer": "a) Đúng; b) Sai",
+        "points": 2,
+        "difficulty": "Nhận biết",
+        "explanation": "2+2=4; 3+3=6.",
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      }
+    ],
+    "validationReport": [
+      {
+        "questionId": "q1",
+        "questionNumber": 1,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q2",
+        "questionNumber": 2,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q3",
+        "questionNumber": 3,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q4",
+        "questionNumber": 4,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      }
+    ],
+    "overallValidationStatus": "WARNING",
+    "validationSummary": "Chưa gọi AI. Chỉ kiểm thử chức năng.",
+    "repairedQuestionCount": 0,
+    "createdAt": "2026-09-05T18:00:00Z"
+  },
+  "exam2": {
+    "level": 2,
+    "levelName": "Biến thể 2",
+    "levelDescription": "Dữ liệu tổng hợp dùng kiểm thử tương tác.",
+    "title": "Đề kiểm thử — Biến thể 2",
+    "metadata": {
+      "title": "ĐỀ KIỂM THỬ GIAO DIỆN — KHÔNG PHẢI KẾT QUẢ AI",
+      "subject": "Toán học",
+      "grade": "Lớp 10",
+      "durationMinutes": 15,
+      "totalQuestions": 4,
+      "totalPoints": 10
+    },
+    "sections": [
+      {
+        "id": "tn",
+        "title": "I. Trắc nghiệm",
+        "questionIds": [
+          "q1",
+          "q2"
+        ]
+      },
+      {
+        "id": "tl",
+        "title": "II. Tự luận",
+        "questionIds": [
+          "q3"
+        ]
+      },
+      {
+        "id": "ds",
+        "title": "III. Đúng / sai",
+        "questionIds": [
+          "q4"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "number": 1,
+        "originalQuestionId": "o1",
+        "sectionId": "tn",
+        "questionText": "Giải phương trình $x+2=5$.",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "A",
+        "points": 1,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q2",
+        "number": 2,
+        "originalQuestionId": "o2",
+        "sectionId": "tn",
+        "questionText": "Giá trị của $\\frac{6}{3}$ là bao nhiêu?",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "B",
+        "points": 3,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q3",
+        "number": 3,
+        "originalQuestionId": "o3",
+        "sectionId": "tl",
+        "questionText": "Trình bày cách giải phương trình $2x+1=7$.",
+        "type": "essay",
+        "correctAnswer": "x = 3",
+        "points": 4,
+        "difficulty": "Thông hiểu",
+        "explanation": "2x = 6 nên x = 3.",
+        "solveSteps": [
+          "Trừ 1 hai vế.",
+          "Chia hai vế cho 2."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      },
+      {
+        "id": "q4",
+        "number": 4,
+        "originalQuestionId": "o4",
+        "sectionId": "ds",
+        "questionText": "Xác định tính đúng sai của từng mệnh đề.",
+        "type": "true_false",
+        "options": [
+          {
+            "label": "a",
+            "text": "$2+2=4$"
+          },
+          {
+            "label": "b",
+            "text": "$3+3=7$"
+          }
+        ],
+        "correctAnswer": "a) Đúng; b) Sai",
+        "points": 2,
+        "difficulty": "Nhận biết",
+        "explanation": "2+2=4; 3+3=6.",
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      }
+    ],
+    "validationReport": [
+      {
+        "questionId": "q1",
+        "questionNumber": 1,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q2",
+        "questionNumber": 2,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q3",
+        "questionNumber": 3,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q4",
+        "questionNumber": 4,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      }
+    ],
+    "overallValidationStatus": "WARNING",
+    "validationSummary": "Chưa gọi AI. Chỉ kiểm thử chức năng.",
+    "repairedQuestionCount": 0,
+    "createdAt": "2026-09-05T18:00:00Z"
+  },
+  "exam3": {
+    "level": 3,
+    "levelName": "Biến thể 3",
+    "levelDescription": "Dữ liệu tổng hợp dùng kiểm thử tương tác.",
+    "title": "Đề kiểm thử — Biến thể 3",
+    "metadata": {
+      "title": "ĐỀ KIỂM THỬ GIAO DIỆN — KHÔNG PHẢI KẾT QUẢ AI",
+      "subject": "Toán học",
+      "grade": "Lớp 10",
+      "durationMinutes": 15,
+      "totalQuestions": 4,
+      "totalPoints": 10
+    },
+    "sections": [
+      {
+        "id": "tn",
+        "title": "I. Trắc nghiệm",
+        "questionIds": [
+          "q1",
+          "q2"
+        ]
+      },
+      {
+        "id": "tl",
+        "title": "II. Tự luận",
+        "questionIds": [
+          "q3"
+        ]
+      },
+      {
+        "id": "ds",
+        "title": "III. Đúng / sai",
+        "questionIds": [
+          "q4"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "q1",
+        "number": 1,
+        "originalQuestionId": "o1",
+        "sectionId": "tn",
+        "questionText": "Giải phương trình $x+2=5$.",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "A",
+        "points": 1,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q2",
+        "number": 2,
+        "originalQuestionId": "o2",
+        "sectionId": "tn",
+        "questionText": "Giá trị của $\\frac{6}{3}$ là bao nhiêu?",
+        "type": "multiple_choice",
+        "options": [
+          {
+            "label": "A",
+            "text": "3"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "5"
+          },
+          {
+            "label": "D",
+            "text": "6"
+          }
+        ],
+        "correctAnswer": "B",
+        "points": 3,
+        "difficulty": "Nhận biết",
+        "explanation": "Đáp án mẫu phục vụ kiểm thử chức năng.",
+        "solveSteps": [
+          "Thực hiện phép tính theo đề."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử tổng hợp"
+      },
+      {
+        "id": "q3",
+        "number": 3,
+        "originalQuestionId": "o3",
+        "sectionId": "tl",
+        "questionText": "Trình bày cách giải phương trình $2x+1=7$.",
+        "type": "essay",
+        "correctAnswer": "x = 3",
+        "points": 4,
+        "difficulty": "Thông hiểu",
+        "explanation": "2x = 6 nên x = 3.",
+        "solveSteps": [
+          "Trừ 1 hai vế.",
+          "Chia hai vế cho 2."
+        ],
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      },
+      {
+        "id": "q4",
+        "number": 4,
+        "originalQuestionId": "o4",
+        "sectionId": "ds",
+        "questionText": "Xác định tính đúng sai của từng mệnh đề.",
+        "type": "true_false",
+        "options": [
+          {
+            "label": "a",
+            "text": "$2+2=4$"
+          },
+          {
+            "label": "b",
+            "text": "$3+3=7$"
+          }
+        ],
+        "correctAnswer": "a) Đúng; b) Sai",
+        "points": 2,
+        "difficulty": "Nhận biết",
+        "explanation": "2+2=4; 3+3=6.",
+        "changesFromOriginal": "Dữ liệu kiểm thử"
+      }
+    ],
+    "validationReport": [
+      {
+        "questionId": "q1",
+        "questionNumber": 1,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q2",
+        "questionNumber": 2,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q3",
+        "questionNumber": 3,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      },
+      {
+        "questionId": "q4",
+        "questionNumber": 4,
+        "status": "WARNING",
+        "message": "Dữ liệu tổng hợp, chưa kiểm định bằng AI.",
+        "knowledgeCheck": "Chưa kiểm định bằng AI",
+        "formulaCheck": "Chưa kiểm định bằng AI",
+        "lawOrRuleCheck": "Chưa kiểm định bằng AI",
+        "conditionCheck": "Chưa kiểm định bằng AI",
+        "solutionCheck": "Chưa kiểm định bằng AI",
+        "answerCheck": "Chưa kiểm định bằng AI",
+        "difficultyCheck": "Chưa kiểm định bằng AI",
+        "gradeLevelCheck": "Chưa kiểm định bằng AI"
+      }
+    ],
+    "overallValidationStatus": "WARNING",
+    "validationSummary": "Chưa gọi AI. Chỉ kiểm thử chức năng.",
+    "repairedQuestionCount": 0,
+    "createdAt": "2026-09-05T18:00:00Z"
+  }
+}
