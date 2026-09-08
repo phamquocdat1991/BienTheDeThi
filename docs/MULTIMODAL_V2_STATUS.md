@@ -111,3 +111,11 @@ Retest this corrective commit on its new Preview; real Gemini connection and sev
 - Three variants: reviewed original, selected subject variants, created 001/002/003. Actual: generated fraction variants, but all three were rejected by metadata-preservation validation. FAIL; no silent export success claimed.
 - Follow-up fixes: retain assessment metadata from the original rather than letting AI rewrite it; exclude formulas already belonging to explanation/answer/options from standalone question-body export to prevent answer-formula leakage. These fixes need new Preview retesting.
 - Local regression now includes answer-index bounds, variable-name validation, source-owned metadata and solution-formula exclusion. Production unchanged.
+
+## Latest Preview checkpoint — 2026-09-08
+
+- Code commit `837dd95d64725e75563005947883fb602d198f39`; deployment `dpl_k5CHC3JE7TkmH7jrANKaTky7Feym`; Vite; READY. URL: `https://bien-the-de-nmen3q0wp-quoc-dat4.vercel.app/`.
+- Local gates: 24 unit tests PASS; lint/typecheck PASS; production build PASS (large-chunk warnings remain). AI requests now include a per-variant seed to avoid reusing identical cached drafts across codes. The seed unit test uses a stub only to inspect request construction; real browser Gemini tests use the authorized real key.
+- Structured extraction on latest Preview: first request returned 502 PROVIDER_ERROR after 10,836 ms; one manual retry succeeded (HTTP 200, 12,963 ms, 1,129 tokens). Original fraction MCQ and answer B preserved; six collected formulas rendered, including options and explanation; review still required.
+- Three-code generation: one further request succeeded (HTTP 200, 8,780 ms, 2,395 tokens), then calls returned HTTP 429 QUOTA_EXCEEDED. All 001/002/003 displayed RESOURCE_EXHAUSTED, kept data, and were not accepted as valid variants. No additional AI calls were made after confirming quota exhaustion. This is not an invalid-key diagnosis.
+- Current blocker: Gemini quota/rate limit prevents completing real variant/validation/vision testing. Metadata fix and solution-formula exclusion have unit coverage but their full real-user export workflow is still NOT VERIFIED. Production unchanged; do not promote.
