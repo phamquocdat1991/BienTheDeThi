@@ -9,6 +9,7 @@ import { importText, detectFile } from '../src/engine/import';
 import { cleanAndParseJSON } from '../src/services/fileExtractService';
 import { shuffleSingleQuestion } from '../src/utils/shuffleExamUtils';
 import { apiError } from '../api/ai';
+import { AIQuestionDraftSchema, draftToQuestion } from '../src/engine/ai';
 
 test('versioned question schema rejects malformed AI',()=>{assert.equal(QuestionSchema.safeParse({version:2,content:3}).success,false);assert.ok(z.toJSONSchema(QuestionSchema));});
 test('visual schema rejects arbitrary SVG/remote image URLs',()=>{assert.equal(VisualSchema.safeParse({kind:'asset',dataUrl:'javascript:alert(1)'}).success,false);});
@@ -46,4 +47,15 @@ test('explicit teacher answer headings are separated before option parsing',()=>
  assert.equal(doc.questions[0].explanation,'Hai cộng ba.');
  assert.equal(answerText(doc.questions[1]),'B');assert.equal(doc.questions[1].options[1].text,'Hai');
  assert.equal(doc.questions[1].validation.reviewed,false);
+});
+test('Gemini wire schema stays compact and maps into full QuestionModel',()=>{
+ const wire=z.toJSONSchema(AIQuestionDraftSchema,{target:'draft-7'}),json=JSON.stringify(wire);
+ assert.ok(json.length<6000);assert.ok(!json.includes('"default"'));assert.ok(!json.includes('"oneOf"'));
+ const draft=AIQuestionDraftSchema.parse({subject:'Toán',grade:'9',topic:'Số học',difficulty:'Nhận biết',type:'single_choice',content:'$x^2$ bằng?',variables:[],formulas:[{rawSource:'x²',latex:'x^2',confidence:.95,kind:'math'}],tables:[],options:['1','2'],correctOptionIndexes:[1],answerText:'',explanation:'Theo dữ kiện.',immutableFacts:[],warnings:[]});
+ const q=draftToQuestion(draft,{id:'ai-q',number:1,documentId:'doc'});
+ assert.equal(q.correctAnswer.optionIds[0],'ai-q-o2');assert.equal(q.formulas[0].needsReview,false);assert.equal(QuestionSchema.safeParse(q).success,true);
+ for(const indexes of [[2],[-1],[0,0]]) assert.throws(()=>draftToQuestion({...draft,correctOptionIndexes:indexes},{id:'ai-q',number:1,documentId:'doc'}));
+ const variable={name:' x ',value:1,policy:'MUTABLE' as const,min:null,max:null,unit:''};
+ assert.equal(draftToQuestion({...draft,variables:[variable]},{id:'ai-q',number:1,documentId:'doc'}).variables.x.value,1);
+ for(const names of [['x',' x '],['__proto__'],['']]) assert.throws(()=>draftToQuestion({...draft,variables:names.map(name=>({...variable,name}))},{id:'ai-q',number:1,documentId:'doc'}));
 });
