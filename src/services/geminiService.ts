@@ -164,11 +164,22 @@ export async function generateWithModelFallback(
         delete genConfig.topK;
       }
 
-      const response = await client.models.generateContent({
-        model: currentModel,
-        contents: options.contents,
-        config: genConfig,
-      });
+      // Tích hợp Latency Timeout per attempt (gemini-resilience-gateway standard)
+      const attemptTimeout = currentModel.includes('lite') ? 6000 : currentModel.includes('3.8') ? 12000 : 9000;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(new Error(`Timeout sau ${attemptTimeout}ms`)), attemptTimeout);
+      genConfig.abortSignal = controller.signal;
+
+      let response: any;
+      try {
+        response = await client.models.generateContent({
+          model: currentModel,
+          contents: options.contents,
+          config: genConfig,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
 
       if (response.text) {
         return response.text;

@@ -23,11 +23,18 @@ export const STORAGE_KEYS = {
 // Danh mục Model cho Gemini API (Google AI Studio) theo AI_INSTRUCTIONS.md & api.md v4.2
 export const GEMINI_MODELS = [
   {
-    id: 'gemini-3.7-flash',
-    name: 'Gemini 3.7 Flash (Mặc định - Flagship)',
+    id: 'gemini-3.8-flash',
+    name: 'Gemini 3.8 Flash (Mặc định - Flagship)',
     tag: 'Mặc định • Dynamic Thinking',
-    description: 'Model flagship mới nhất (13/08/2026), hỗ trợ Dynamic Thinking Budget, xuất sắc về lý luận toán học và phân hóa đề thi',
+    description: 'Model flagship mới nhất, hỗ trợ Dynamic Thinking Budget, xuất sắc về lý luận toán học và phân hóa đề thi',
     recommended: true,
+  },
+  {
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    tag: 'Dự phòng cao cấp',
+    description: 'Model dự phòng thế hệ mới, ổn định cao trong phân tích và sinh đề',
+    recommended: false,
   },
   {
     id: 'gemini-3.6-flash',
@@ -67,6 +74,7 @@ export const GEMINI_MODELS = [
 ] as const;
 
 export const GEMINI_FALLBACK_MODELS = [
+  'gemini-3.8-flash',
   'gemini-3.7-flash',
   'gemini-3.6-flash',
   'gemini-3.5-flash',
