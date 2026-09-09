@@ -158,15 +158,15 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-5xl h-[92vh] rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
         {/* Top bar: Exam Info & Timer */}
-        <div className="bg-[#1E293B] text-white px-6 py-4 flex items-center justify-between border-b border-[#334155] shrink-0">
+        <div className="bg-[#204f43] text-white px-6 py-4 flex items-center justify-between border-b border-[#386758] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0284C7] flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-[#238773] flex items-center justify-center text-white font-bold">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-white truncate max-w-md">{exam.title}</h3>
-                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/30">
+                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#238773]/20 text-[#72cbb2] border border-[#238773]/30">
                   Cấp độ {exam.level}
                 </span>
               </div>
@@ -241,7 +241,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                   }
 
                   if (isCurrent) {
-                    badgeStyle += ' ring-2 ring-[#0284C7] ring-offset-1 font-bold';
+                    badgeStyle += ' ring-2 ring-[#238773] ring-offset-1 font-bold';
                   }
 
                   return (
@@ -275,7 +275,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                     setTimeRemainingSeconds((exam.metadata?.durationMinutes || 45) * 60);
                     setCurrentIndex(0);
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#238773] hover:bg-[#176653] text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Làm Lại Từ Đầu</span>
@@ -297,7 +297,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                     </div>
                     <h4 className="text-xl font-bold text-slate-900">
                       Điểm số của bạn:{' '}
-                      <span className="text-[#0284C7] text-2xl">{finalScore}</span> / 10 điểm
+                      <span className="text-[#238773] text-2xl">{finalScore}</span> / 10 điểm
                     </h4>
                     <p className="text-xs text-slate-600">
                       Đúng {correctCount}/{totalQuestions} câu • Sai {wrongCount} câu • Bỏ qua{' '}
@@ -311,7 +311,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                       onClick={() => setFilterMode('all')}
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                         filterMode === 'all'
-                          ? 'bg-[#0284C7] text-white'
+                          ? 'bg-[#238773] text-white'
                           : 'bg-white border border-slate-200 text-slate-700'
                       }`}
                     >
@@ -374,7 +374,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                           currentQuestion.correctAnswer.trim().toUpperCase();
 
                         let optionCardStyle =
-                          'border-slate-200 bg-white hover:border-[#0284C7]/60 hover:bg-sky-50/30';
+                          'border-slate-200 bg-white hover:border-[#238773]/60 hover:bg-sky-50/30';
 
                         if (isSubmitted) {
                           if (isCorrectAnswer) {
@@ -386,7 +386,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                           }
                         } else if (isSelected) {
                           optionCardStyle =
-                            'border-[#0284C7] bg-[#0284C7]/10 text-[#0284C7] font-semibold shadow-xs';
+                            'border-[#238773] bg-[#238773]/10 text-[#238773] font-semibold shadow-xs';
                         }
 
                         return (
@@ -404,7 +404,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                                     : isSubmitted && isSelected && !isCorrectAnswer
                                     ? 'bg-rose-600 text-white'
                                     : isSelected
-                                    ? 'bg-[#0284C7] text-white'
+                                    ? 'bg-[#238773] text-white'
                                     : 'bg-slate-100 text-slate-700'
                                 }`}
                               >
@@ -473,7 +473,7 @@ export const ExamInteractiveModal: React.FC<ExamInteractiveModalProps> = ({
                   <button
                     onClick={() => setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
                     disabled={currentIndex === totalQuestions - 1}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#238773] hover:bg-[#176653] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <span>Câu tiếp theo</span>
                     <ChevronRight className="w-4 h-4" />

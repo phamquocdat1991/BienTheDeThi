@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -29,12 +29,22 @@ export const InputSection: React.FC<InputSectionProps> = ({
   onOpenApiKeyModal,
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
-  const [pastedText, setPastedText] = useState<string>('');
+  const [pastedText, setPastedText] = useState<string>(() => { try { return localStorage.getItem('bienthedethi_input_draft') || ''; } catch { return ''; } });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try { localStorage.setItem('bienthedethi_input_draft', pastedText); setDraftStatus(pastedText ? 'Đã lưu nháp trên thiết bị' : ''); }
+      catch { setDraftStatus('Không thể lưu nháp trên thiết bị này'); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [pastedText]);
 
   // Handle file selection
   const processFile = (file: File) => {
@@ -105,6 +115,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   const handleStartAnalysis = async () => {
+    if (isExtracting || isLoading) return;
     setErrorMessage(null);
 
     if (!hasApiKey) {
@@ -128,63 +139,48 @@ export const InputSection: React.FC<InputSectionProps> = ({
       }
 
       try {
+        setIsExtracting(true);
         const source = await extractFileContentInBrowser(selectedFile);
         onAnalyze(source);
       } catch (err: any) {
         console.error(err);
         setErrorMessage(err.message || 'Không thể xử lý file. Vui lòng thử lại.');
-      }
+      } finally { setIsExtracting(false); }
     }
   };
 
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Intro Box - 30% Brand Slate */}
-      <div className="bg-[#1E293B] text-white rounded-2xl p-6 sm:p-8 shadow-sm border border-[#334155]">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-[#38BDF8]" />
-              <span>Bước 1: Nạp Đề Kiểm Tra Gốc</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Tải lên hoặc Dán nội dung Đề thi
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-              Hỗ trợ file Word (<code className="bg-[#0F172A] px-1 py-0.5 rounded text-slate-200">.docx</code>),
-              Adobe PDF, Ảnh chụp đề (<code className="bg-[#0F172A] px-1 py-0.5 rounded text-slate-200">PNG, JPG, WEBP</code>)
-              hoặc dán văn bản. AI sẽ bóc tách ma trận và chuẩn bị tạo 03 đề biến thể tuần tự.
-            </p>
-          </div>
+      <section className="sunrise-welcome">
+        <div><span className="sunrise-eyebrow">KHÔNG GIAN SOẠN ĐỀ CỦA THẦY CÔ</span>
+        <h2>Biến thể đề thi <em>thông minh</em></h2>
+        <p>Từ một đề gốc, mở ra ba cấp độ học tập. Bắt đầu bằng tài liệu của thầy cô.</p>
+        <div className="sunrise-tags"><span>3 cấp độ biến thể</span><span>8 tiêu chí kiểm định</span><span>Xuất Word & đáp án</span></div></div>
+        <div className="sunrise-note">Mỗi đề thi tốt hơn,<br />mỗi giờ dạy nhẹ hơn.<span> Cùng AI, dành thêm thời gian cho học trò.</span></div>
+      </section>
 
-          <div className="shrink-0 hidden lg:block text-right">
-            <div className="bg-[#334155]/60 rounded-xl p-3.5 border border-slate-600/80 text-xs text-slate-200 space-y-1.5 text-left">
-              <div className="font-bold text-white flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-                <span>Quy trình sư phạm:</span>
-              </div>
-              <div className="text-[11px] text-slate-300">• Bảo toàn ma trận & chuẩn kiến thức</div>
-              <div className="text-[11px] text-slate-300">• Tự động giải lại từng bước</div>
-              <div className="text-[11px] text-slate-300">• Kiểm định độc lập 8 tiêu chí</div>
-            </div>
-          </div>
-        </div>
-      </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx,.doc,.pdf,.png,.jpg,.jpeg,.webp,.txt"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
 
       {/* Main Input Card - 60% White & Soft Slate */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Tab Header */}
-        <div className="flex border-b border-slate-200 bg-[#F8FAFC] p-1.5 gap-1.5">
+        <div className="flex border-b border-slate-200 bg-[#fffbf7] p-1.5 gap-1.5">
           <button
             onClick={() => setActiveTab('upload')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
               activeTab === 'upload'
-                ? 'bg-white text-[#0284C7] shadow-xs border border-slate-200'
+                ? 'bg-white text-[#238773] shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
             }`}
           >
-            <UploadCloud className="w-4 h-4 text-[#0284C7]" />
+            <UploadCloud className="w-4 h-4 text-[#238773]" />
             <span>Kéo thả & Tải File</span>
             <span className="text-[11px] font-normal text-slate-400 hidden sm:inline">(DOCX, PDF, Ảnh, TXT)</span>
           </button>
@@ -193,11 +189,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
             onClick={() => setActiveTab('paste')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
               activeTab === 'paste'
-                ? 'bg-white text-[#0284C7] shadow-xs border border-slate-200'
+                ? 'bg-white text-[#238773] shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
             }`}
           >
-            <ClipboardPaste className="w-4 h-4 text-[#0284C7]" />
+            <ClipboardPaste className="w-4 h-4 text-[#238773]" />
             <span>Dán Văn Bản Trực Tiếp</span>
             <span className="text-[11px] font-normal text-slate-400 hidden sm:inline">(Soạn thảo/Copy)</span>
           </button>
@@ -209,31 +205,27 @@ export const InputSection: React.FC<InputSectionProps> = ({
             <div>
               {!selectedFile ? (
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Chọn file đề thi"
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onClick={() => fileInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition flex flex-col items-center justify-center gap-4 ${
                     isDragOver
-                      ? 'border-[#0284C7] bg-[#F0F9FF]'
-                      : 'border-slate-300 hover:border-[#0284C7] bg-[#F8FAFC] hover:bg-[#F0F9FF]/50'
+                      ? 'border-[#238773] bg-[#eefaf5]'
+                      : 'border-slate-300 hover:border-[#238773] bg-[#fffbf7] hover:bg-[#eefaf5]/50'
                   }`}
                 >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".docx,.doc,.pdf,.png,.jpg,.jpeg,.webp,.txt"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-
-                  <div className="w-16 h-16 rounded-2xl bg-[#E0F2FE] text-[#0284C7] flex items-center justify-center shadow-xs">
+                  <div className="w-16 h-16 rounded-2xl bg-[#def3e9] text-[#238773] flex items-center justify-center shadow-xs">
                     <UploadCloud className="w-8 h-8" />
                   </div>
 
                   <div className="space-y-1">
                     <p className="text-sm sm:text-base font-bold text-slate-800">
-                      Kéo và thả file đề thi vào đây, hoặc <span className="text-[#0284C7] hover:underline">duyệt từ máy tính</span>
+                      Kéo và thả file đề thi vào đây, hoặc <span className="text-[#238773] hover:underline">duyệt từ máy tính</span>
                     </p>
                     <p className="text-xs text-slate-500">
                       Hỗ trợ Microsoft Word (.docx), Adobe PDF (.pdf), Ảnh đề thi (.png, .jpg, .webp) và Text (.txt) - Tối đa 25MB
@@ -241,7 +233,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
 
                   <div className="flex flex-wrap justify-center gap-2 pt-2">
-                    <span className="px-2.5 py-1 rounded-md bg-[#E0F2FE] text-[#0369A1] text-xs font-semibold border border-[#BAE6FD]">
+                    <span className="px-2.5 py-1 rounded-md bg-[#def3e9] text-[#176653] text-xs font-semibold border border-[#b8dfce]">
                       DOCX / Word
                     </span>
                     <span className="px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
@@ -256,10 +248,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="border border-slate-200 rounded-2xl p-6 bg-[#F8FAFC] space-y-4">
+                <div className="border border-slate-200 rounded-2xl p-6 bg-[#fffbf7] space-y-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-[#0284C7] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <div className="w-12 h-12 rounded-xl bg-[#238773] text-white flex items-center justify-center shrink-0 shadow-xs">
                         <FileCheck className="w-6 h-6" />
                       </div>
                       <div>
@@ -294,7 +286,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="text-xs text-[#0284C7] hover:text-[#0369A1] font-bold cursor-pointer"
+                      className="text-xs text-[#238773] hover:text-[#176653] font-bold cursor-pointer"
                     >
                       Chọn file khác
                     </button>
@@ -308,7 +300,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                 <label htmlFor="examTextInput" className="font-bold text-slate-700">
                   Nội dung đề kiểm tra:
                 </label>
-                <span className="font-medium">{pastedText.length} ký tự</span>
+                <span className="font-medium">{pastedText.length} ký tự · {draftStatus}</span>
               </div>
               <textarea
                 id="examTextInput"
@@ -316,7 +308,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                 onChange={(e) => setPastedText(e.target.value)}
                 placeholder="Dán toàn bộ nội dung đề thi vào đây (bao gồm tiêu đề, các phần trắc nghiệm/tự luận, các câu hỏi và đáp án nếu có)..."
                 rows={12}
-                className="w-full rounded-xl border border-slate-300 p-4 text-xs sm:text-sm font-mono text-slate-800 focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20 transition resize-y bg-[#F8FAFC]"
+                className="w-full rounded-xl border border-slate-300 p-4 text-xs sm:text-sm font-mono text-slate-800 focus:border-[#238773] focus:ring-2 focus:ring-[#238773]/20 transition resize-y bg-[#fffbf7]"
               />
             </div>
           )}
@@ -335,10 +327,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   key={sample.id}
                   type="button"
                   onClick={() => loadSample(sample)}
-                  className="text-left p-3.5 rounded-xl border border-slate-200 hover:border-[#0284C7] bg-[#F8FAFC] hover:bg-[#F0F9FF] transition group cursor-pointer"
+                  className="text-left p-3.5 rounded-xl border border-slate-200 hover:border-[#238773] bg-[#fffbf7] hover:bg-[#eefaf5] transition group cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 group-hover:text-[#0284C7]">
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-[#238773]">
                       {sample.subject} - {sample.grade}
                     </span>
                     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">
@@ -371,11 +363,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
             <button
               onClick={handleStartAnalysis}
-              disabled={isLoading}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] active:bg-[#075985] text-white font-bold text-sm shadow-md shadow-[#0284C7]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              disabled={isLoading || isExtracting}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#238773] hover:bg-[#176653] active:bg-[#124f43] text-white font-bold text-sm shadow-md shadow-[#238773]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              <span>BẮT ĐẦU PHÂN TÍCH ĐỀ GỐC</span>
+              <span>{isExtracting ? 'Đang đọc tài liệu…' : 'Phân tích đề gốc'}</span>
             </button>
           </div>
         </div>

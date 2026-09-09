@@ -85,7 +85,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="bg-[#1E293B] text-white p-6 flex items-start justify-between border-b border-[#334155]">
+        <div className="bg-[#204f43] text-white p-6 flex items-start justify-between border-b border-[#386758]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
               <History className="w-5 h-5" />
@@ -157,11 +157,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                   onRestoreSession(item.session);
                   onClose();
                 }}
-                className="group p-4 rounded-2xl border border-slate-200 hover:border-[#0284C7] bg-white hover:bg-sky-50/40 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer"
+                className="group p-4 rounded-2xl border border-slate-200 hover:border-[#238773] bg-white hover:bg-sky-50/40 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer"
               >
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#0284C7]/15 text-[#0369A1]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#238773]/15 text-[#176653]">
                       {item.subject} • {item.grade}
                     </span>
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -180,7 +180,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     </span>
                   </div>
 
-                  <h4 className="text-sm font-bold text-slate-900 truncate group-hover:text-[#0284C7] transition">
+                  <h4 className="text-sm font-bold text-slate-900 truncate group-hover:text-[#238773] transition">
                     {item.title}
                   </h4>
                   <p className="text-xs text-slate-500">
@@ -211,7 +211,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                       onRestoreSession(item.session);
                       onClose();
                     }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow-xs transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#238773] hover:bg-[#176653] text-white text-xs font-bold shadow-xs transition"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Mở Lại</span>

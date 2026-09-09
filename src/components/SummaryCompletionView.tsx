@@ -78,7 +78,7 @@ export const SummaryCompletionView: React.FC<SummaryCompletionViewProps> = ({
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Celebration Header - Slate Brand with Emerald badge */}
-      <div className="bg-[#1E293B] text-white rounded-3xl p-8 sm:p-10 shadow-lg border border-[#334155] text-center sm:text-left space-y-6">
+      <div className="bg-[#204f43] text-white rounded-3xl p-8 sm:p-10 shadow-lg border border-[#386758] text-center sm:text-left space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-[#10B981]/20 text-[#86EFAC] border border-[#10B981]/30 text-xs font-bold">
@@ -144,14 +144,14 @@ export const SummaryCompletionView: React.FC<SummaryCompletionViewProps> = ({
             onClick={() => setSelectedLevel(ex.level)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
               selectedLevel === ex.level
-                ? 'bg-white text-[#0284C7] shadow-sm border border-slate-200'
+                ? 'bg-white text-[#238773] shadow-sm border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
             {ex.level === 1 ? (
               <Layers className="w-4 h-4 text-[#10B981]" />
             ) : ex.level === 2 ? (
-              <GitCompare className="w-4 h-4 text-[#0284C7]" />
+              <GitCompare className="w-4 h-4 text-[#238773]" />
             ) : (
               <Sparkles className="w-4 h-4 text-[#F59E0B]" />
             )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ExamWorkflowState,
   ExamAnalysis,
@@ -38,6 +38,7 @@ import {
 } from './services/historyService';
 
 export default function App() {
+  const sessionIdentity = useRef({ id: crypto.randomUUID(), createdAt: new Date().toISOString() });
   // 1. API Configuration State
   const [apiConfig, setApiConfig] = useState<ApiConfig>(() => loadStoredApiConfig());
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
@@ -107,8 +108,8 @@ export default function App() {
   ) => {
     if (!analysis) return;
     const sessionData: ExamSessionData = {
-      id: analysis.examMetadata?.title ? `sess_${analysis.examMetadata.title}` : `sess_${Date.now()}`,
-      createdAt: new Date().toISOString(),
+      id: sessionIdentity.current.id,
+      createdAt: sessionIdentity.current.createdAt,
       updatedAt: new Date().toISOString(),
       title: analysis.examMetadata?.title || 'Đề kiểm tra',
       subject: analysis.examMetadata?.subject || 'Toán học',
@@ -129,6 +130,8 @@ export default function App() {
 
   // Khôi phục phiên làm việc
   const handleRestoreSession = (session: ExamSessionData) => {
+    sessionIdentity.current = { id: session.id, createdAt: session.createdAt };
+    setErrorMessage(null);
     setLastInputSource(session.lastInputSource);
     setExamAnalysis(session.examAnalysis);
     setExam1(session.exam1);
@@ -158,7 +161,9 @@ export default function App() {
 
     try {
       const analysis = await analyzeOriginalExam(source, apiConfig, handleModelFallback);
+      sessionIdentity.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() };
       setExamAnalysis(analysis);
+      setExam1(null); setExam2(null); setExam3(null);
       setWorkflowState('ANALYZED');
       setActiveStepTab(2); // Chuyển sang xem ma trận phân tích
       syncAndSaveSession('ANALYZED', 2, analysis, null, null, null, source);
@@ -189,13 +194,14 @@ export default function App() {
     try {
       const generated = await generateExamVariant(1, examAnalysis, [], apiConfig, handleModelFallback);
       setExam1(generated);
+      setExam2(null); setExam3(null);
       setWorkflowState('EXAM_1_COMPLETE');
       setActiveStepTab(3); // Xem Đề 1
-      syncAndSaveSession('EXAM_1_COMPLETE', 3, examAnalysis, generated, exam2, exam3, lastInputSource);
+      syncAndSaveSession('EXAM_1_COMPLETE', 3, examAnalysis, generated, null, null, lastInputSource);
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'Lỗi khi tạo Đề 1.');
-      setWorkflowState('ANALYZED'); // Giữ nguyên kết quả phân tích để giáo viên có thể thử lại
+      setWorkflowState(workflowState); // Giữ nguyên kết quả phân tích để giáo viên có thể thử lại
     }
   };
 
@@ -225,13 +231,14 @@ export default function App() {
         handleModelFallback
       );
       setExam2(generated);
+      setExam3(null);
       setWorkflowState('EXAM_2_COMPLETE');
       setActiveStepTab(4); // Xem Đề 2
-      syncAndSaveSession('EXAM_2_COMPLETE', 4, examAnalysis, exam1, generated, exam3, lastInputSource);
+      syncAndSaveSession('EXAM_2_COMPLETE', 4, examAnalysis, exam1, generated, null, lastInputSource);
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'Lỗi khi tạo Đề 2.');
-      setWorkflowState('EXAM_1_COMPLETE'); // Giữ nguyên Đề 1 đã tạo
+      setWorkflowState(workflowState); // Giữ nguyên Đề 1 đã tạo
     }
   };
 
@@ -267,7 +274,7 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || 'Lỗi khi tạo Đề 3.');
-      setWorkflowState('EXAM_2_COMPLETE'); // Giữ nguyên Đề 2 đã tạo
+      setWorkflowState(workflowState); // Giữ nguyên Đề 2 đã tạo
     }
   };
 
@@ -314,6 +321,7 @@ export default function App() {
   // Reset toàn bộ trạng thái app
   const handleFullReset = () => {
     clearCurrentSession();
+    sessionIdentity.current = { id: crypto.randomUUID(), createdAt: new Date().toISOString() };
     setWorkflowState('EMPTY');
     setActiveStepTab(1);
     setLastInputSource(null);
@@ -337,7 +345,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-[#0284C7] selection:text-white">
+    <div className="sunrise-app min-h-screen bg-[#fffbf7] text-slate-900 flex flex-col font-sans selection:bg-[#238773] selection:text-white">
       {/* Header */}
       <Header
         workflowState={workflowState}
@@ -377,10 +385,10 @@ export default function App() {
         {restoreNotice && workflowState === 'EMPTY' && (
           <div className="max-w-4xl mx-auto p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sky-950 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
             <div className="flex items-center gap-2.5">
-              <RotateCcw className="w-5 h-5 text-[#0284C7] shrink-0" />
+              <RotateCcw className="w-5 h-5 text-[#238773] shrink-0" />
               <div>
                 <p className="font-bold text-slate-900 text-sm">
-                  Bạn có một phiên làm việc chưa hoàn tất: <span className="text-[#0284C7]">{restoreNotice.title}</span>
+                  Bạn có một phiên làm việc chưa hoàn tất: <span className="text-[#238773]">{restoreNotice.title}</span>
                 </p>
                 <p className="text-slate-500 mt-0.5">
                   Lưu gần nhất lúc {new Date(restoreNotice.updatedAt).toLocaleTimeString('vi-VN')} ({restoreNotice.subject} - {restoreNotice.grade})
@@ -396,7 +404,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => handleRestoreSession(restoreNotice)}
-                className="px-4 py-1.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold shadow-xs transition active:scale-95 cursor-pointer"
+                className="px-4 py-1.5 rounded-xl bg-[#238773] hover:bg-[#176653] text-white font-bold shadow-xs transition active:scale-95 cursor-pointer"
               >
                 Khôi phục phiên
               </button>

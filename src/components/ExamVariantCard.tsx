@@ -117,8 +117,8 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#0284C7]/15 text-[#0369A1] text-xs font-bold border border-[#0284C7]/30">
-                <Sparkles className="w-3.5 h-3.5 text-[#0284C7]" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#238773]/15 text-[#176653] text-xs font-bold border border-[#238773]/30">
+                <Sparkles className="w-3.5 h-3.5 text-[#238773]" />
                 CẤP ĐỘ {exam.level}: {exam.levelName}
               </span>
               <span
@@ -134,7 +134,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                   : 'Kiểm định: CẦN LƯU Ý'}
               </span>
               {exam.repairedQuestionCount && exam.repairedQuestionCount > 0 ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F0F9FF] text-[#0369A1] text-[11px] font-medium border border-[#BAE6FD]">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#eefaf5] text-[#176653] text-[11px] font-medium border border-[#b8dfce]">
                   Đã tự động chỉnh sửa {exam.repairedQuestionCount} câu
                 </span>
               ) : null}
@@ -150,7 +150,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
               <button
                 onClick={onProceedNext}
                 disabled={isLoading}
-                className="w-full lg:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] active:bg-[#075985] text-white font-bold text-sm shadow-md shadow-[#0284C7]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full lg:w-auto flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl bg-[#238773] hover:bg-[#176653] active:bg-[#124f43] text-white font-bold text-sm shadow-md shadow-[#238773]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <span>{nextButtonLabel}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -164,7 +164,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleCopyExam}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F8FAFC] hover:bg-slate-200 text-slate-800 text-xs font-semibold transition border border-slate-200 cursor-pointer active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#fffbf7] hover:bg-slate-200 text-slate-800 text-xs font-semibold transition border border-slate-200 cursor-pointer active:scale-95"
             >
               {copiedType === 'exam' ? (
                 <>
@@ -181,7 +181,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
 
             <button
               onClick={handleCopyAnswers}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F8FAFC] hover:bg-slate-200 text-slate-800 text-xs font-semibold transition border border-slate-200 cursor-pointer active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#fffbf7] hover:bg-slate-200 text-slate-800 text-xs font-semibold transition border border-slate-200 cursor-pointer active:scale-95"
             >
               {copiedType === 'answers' ? (
                 <>
@@ -265,7 +265,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F8FAFC] hover:bg-slate-200 text-slate-800 text-xs font-semibold transition border border-slate-200 cursor-pointer active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#fffbf7] hover:bg-slate-200 text-slate-800 text-xs font-semibold transition border border-slate-200 cursor-pointer active:scale-95"
             >
               <Printer className="w-4 h-4 text-slate-600" />
               <span>In đề thi</span>
@@ -288,12 +288,12 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
       {/* Tabs Layout */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* 4 Required Tabs in Exact Order: ĐỀ THI | ĐÁP ÁN | KIỂM ĐỊNH | SO SÁNH */}
-        <div className="flex border-b border-slate-200 bg-[#F8FAFC] p-1.5 gap-1.5 overflow-x-auto">
+        <div className="flex border-b border-slate-200 bg-[#fffbf7] p-1.5 gap-1.5 overflow-x-auto">
           <button
             onClick={() => setActiveTab('exam')}
             className={`flex items-center gap-2 py-3 px-5 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'exam'
-                ? 'bg-white text-[#0284C7] shadow-xs border border-slate-200'
+                ? 'bg-white text-[#238773] shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
             }`}
           >
@@ -305,7 +305,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
             onClick={() => setActiveTab('answers')}
             className={`flex items-center gap-2 py-3 px-5 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'answers'
-                ? 'bg-white text-[#0284C7] shadow-xs border border-slate-200'
+                ? 'bg-white text-[#238773] shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
             }`}
           >
@@ -317,7 +317,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
             onClick={() => setActiveTab('validation')}
             className={`flex items-center gap-2 py-3 px-5 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'validation'
-                ? 'bg-white text-[#0284C7] shadow-xs border border-slate-200'
+                ? 'bg-white text-[#238773] shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
             }`}
           >
@@ -329,7 +329,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
             onClick={() => setActiveTab('comparison')}
             className={`flex items-center gap-2 py-3 px-5 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'comparison'
-                ? 'bg-white text-[#0284C7] shadow-xs border border-slate-200'
+                ? 'bg-white text-[#238773] shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
             }`}
           >
@@ -360,7 +360,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                 <h3 className="text-sm sm:text-base font-extrabold text-slate-900 uppercase">
                   {exam.title}
                 </h3>
-                <p className="text-xs font-bold text-[#0284C7] uppercase">
+                <p className="text-xs font-bold text-[#238773] uppercase">
                   {exam.levelName}
                 </p>
                 <p className="text-xs text-slate-600 italic">
@@ -387,7 +387,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                     <button
                       type="button"
                       onClick={() => setEditingQuestion(q)}
-                      className="hidden group-hover:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#0369A1] text-[11px] font-bold shrink-0 transition no-print cursor-pointer"
+                      className="hidden group-hover:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#def3e9] hover:bg-[#b8dfce] text-[#176653] text-[11px] font-bold shrink-0 transition no-print cursor-pointer"
                       title="Chỉnh sửa hoặc nhờ AI giải lại câu này"
                     >
                       <Edit3 className="w-3 h-3" />
@@ -433,7 +433,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-slate-300 text-xs text-center">
                   <thead>
-                    <tr className="bg-[#F8FAFC] text-slate-700 font-bold">
+                    <tr className="bg-[#fffbf7] text-slate-700 font-bold">
                       {exam.questions.map((q, idx) => (
                         <th key={q.id || idx} className="border border-slate-300 p-2.5">
                           Câu {q.number || idx + 1}
@@ -457,7 +457,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
             {/* Detailed Solutions */}
             <div className="space-y-4 pt-4 border-t border-slate-200">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-[#0284C7]" />
+                <FileText className="w-5 h-5 text-[#238773]" />
                 <h3 className="text-base font-bold text-slate-900">LỜI GIẢI CHI TIẾT TỪNG CÂU</h3>
               </div>
 
@@ -465,11 +465,11 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                 {exam.questions.map((q: VariantQuestion, idx: number) => (
                   <div
                     key={q.id || idx}
-                    className="p-5 rounded-xl border border-slate-200 bg-[#F8FAFC] space-y-3 relative group"
+                    className="p-5 rounded-xl border border-slate-200 bg-[#fffbf7] space-y-3 relative group"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#1E293B] text-white text-xs font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#204f43] text-white text-xs font-bold">
                           Câu {q.number || idx + 1}
                         </span>
                         <span className="text-xs font-bold text-[#15803D] bg-[#DCFCE7] px-2 py-0.5 rounded border border-[#86EFAC]">
@@ -488,7 +488,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                         <button
                           type="button"
                           onClick={() => setEditingQuestion(q)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-[#0284C7] border border-slate-200 text-xs font-bold transition cursor-pointer"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-[#238773] border border-slate-200 text-xs font-bold transition cursor-pointer"
                           title="Chỉnh sửa câu hỏi này"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
@@ -523,7 +523,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                     )}
 
                     {q.changesFromOriginal && (
-                      <p className="text-[11px] text-[#0369A1] bg-[#F0F9FF] p-2.5 rounded border border-[#BAE6FD]">
+                      <p className="text-[11px] text-[#176653] bg-[#eefaf5] p-2.5 rounded border border-[#b8dfce]">
                         <strong>Điểm biến thể so với đề gốc:</strong> {q.changesFromOriginal}
                       </p>
                     )}
@@ -538,7 +538,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
         {activeTab === 'validation' && (
           <div className="p-6 sm:p-8 space-y-6">
             {/* Validation Summary Card - Brand Slate */}
-            <div className="p-5 rounded-2xl bg-[#1E293B] text-white space-y-3 border border-[#334155]">
+            <div className="p-5 rounded-2xl bg-[#204f43] text-white space-y-3 border border-[#386758]">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-6 h-6 text-[#10B981]" />
                 <h3 className="text-lg font-bold">Báo Cáo Động Cơ Kiểm Định Độc Lập</h3>
@@ -609,7 +609,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
 
                         <button
                           onClick={() => setExpandedValId(isExpanded ? null : val.questionId)}
-                          className="text-xs text-[#0284C7] font-semibold flex items-center gap-1 hover:underline shrink-0 cursor-pointer"
+                          className="text-xs text-[#238773] font-semibold flex items-center gap-1 hover:underline shrink-0 cursor-pointer"
                         >
                           <span>{isExpanded ? 'Ẩn 8 tiêu chí' : 'Xem 8 tiêu chí'}</span>
                           {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -619,35 +619,35 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                       {/* 8 Criteria Grid */}
                       {isExpanded && (
                         <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">1. Kiến thức khoa học:</strong>
                             <p className="text-slate-600 mt-0.5">{val.knowledgeCheck || 'Chuẩn xác'}</p>
                           </div>
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">2. Công thức áp dụng:</strong>
                             <p className="text-slate-600 mt-0.5">{val.formulaCheck || 'Đúng công thức'}</p>
                           </div>
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">3. Định lý & Định luật:</strong>
                             <p className="text-slate-600 mt-0.5">{val.lawOrRuleCheck || 'Tuân thủ'}</p>
                           </div>
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">4. Điều kiện xác định/thực tế:</strong>
                             <p className="text-slate-600 mt-0.5">{val.conditionCheck || 'Thỏa mãn'}</p>
                           </div>
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">5. Tính chặt chẽ lời giải:</strong>
                             <p className="text-slate-600 mt-0.5">{val.solutionCheck || 'Logic'}</p>
                           </div>
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">6. Tính duy nhất của đáp án:</strong>
                             <p className="text-slate-600 mt-0.5">{val.answerCheck || 'Duy nhất & nhiễu chuẩn'}</p>
                           </div>
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">7. Chuẩn mức độ nhận thức:</strong>
                             <p className="text-slate-600 mt-0.5">{val.difficultyCheck || 'Phù hợp'}</p>
                           </div>
-                          <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-slate-200">
+                          <div className="bg-[#fffbf7] p-2.5 rounded-lg border border-slate-200">
                             <strong className="text-slate-800">8. Chuẩn cấp lớp/chương trình:</strong>
                             <p className="text-slate-600 mt-0.5">{val.gradeLevelCheck || 'Không vượt chuẩn'}</p>
                           </div>
@@ -684,9 +684,9 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                     className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs"
                   >
                     {/* Header */}
-                    <div className="bg-[#F8FAFC] p-3 px-4 flex items-center justify-between border-b border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="bg-[#fffbf7] p-3 px-4 flex items-center justify-between border-b border-slate-200 text-xs font-bold text-slate-800">
                       <span>CÂU HỎI SỐ {vq.number || idx + 1}</span>
-                      <span className="text-[#0369A1] bg-[#F0F9FF] px-2.5 py-0.5 rounded-full border border-[#BAE6FD]">
+                      <span className="text-[#176653] bg-[#eefaf5] px-2.5 py-0.5 rounded-full border border-[#b8dfce]">
                         {vq.changesFromOriginal || 'Biến thể tương ứng'}
                       </span>
                     </div>
@@ -740,12 +740,12 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
                       </div>
 
                       {/* Variant Question */}
-                      <div className="p-4 space-y-3 bg-[#F0F9FF]/30">
+                      <div className="p-4 space-y-3 bg-[#eefaf5]/30">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[#0284C7] uppercase tracking-wider">
+                          <span className="text-[11px] font-bold text-[#238773] uppercase tracking-wider">
                             [ĐỀ BIẾN THỂ CẤP ĐỘ {exam.level}]
                           </span>
-                          <span className="text-[10px] font-semibold bg-[#E0F2FE] text-[#0369A1] px-2 py-0.5 rounded">
+                          <span className="text-[10px] font-semibold bg-[#def3e9] text-[#176653] px-2 py-0.5 rounded">
                             {vq.difficulty}
                           </span>
                         </div>
@@ -793,7 +793,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
 
       {/* Bottom CTA for next phase */}
       {onProceedNext && isNextAvailable && (
-        <div className="p-6 rounded-2xl bg-[#1E293B] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm border border-[#334155]">
+        <div className="p-6 rounded-2xl bg-[#204f43] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm border border-[#386758]">
           <div>
             <h4 className="text-base font-bold text-white">{nextButtonLabel}</h4>
             <p className="text-xs text-slate-300 mt-0.5">
@@ -804,7 +804,7 @@ export const ExamVariantCard: React.FC<ExamVariantCardProps> = ({
           <button
             onClick={onProceedNext}
             disabled={isLoading}
-            className="shrink-0 flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] active:bg-[#075985] text-white font-bold text-sm shadow-md shadow-[#0284C7]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="shrink-0 flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#238773] hover:bg-[#176653] active:bg-[#124f43] text-white font-bold text-sm shadow-md shadow-[#238773]/20 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <span>{nextButtonLabel}</span>
             <ArrowRight className="w-4 h-4" />

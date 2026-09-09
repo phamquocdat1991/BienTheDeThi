@@ -120,7 +120,7 @@ export const VisitCounter: React.FC = () => {
   return (
     <div className="flex items-center gap-2 flex-wrap text-xs">
       {/* Tổng lượt truy cập toàn cầu */}
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#0284C7]/30 bg-[#0F172A]/80 backdrop-blur-xs shadow-xs">
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#238773]/30 bg-[#173e34]/80 backdrop-blur-xs shadow-xs">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -134,9 +134,9 @@ export const VisitCounter: React.FC = () => {
       </div>
 
       {/* Lượt hôm nay */}
-      <div className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-amber-500/30 bg-amber-950/40 text-amber-200">
+      <div className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-amber-500/30 bg-orange-50 text-amber-800">
         <span>📅 Hôm nay:</span>
-        <strong className="text-amber-100 font-bold">
+        <strong className="text-amber-900 font-bold">
           <AnimatedNumber value={visitData.todayVisits} duration={600} />
         </strong>
       </div>

@@ -50,7 +50,7 @@ export const ShuffleModal: React.FC<ShuffleModalProps> = ({ isOpen, onClose, exa
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[88vh]">
         {/* Header */}
-        <div className="bg-[#1E293B] text-white p-6 flex items-start justify-between border-b border-[#334155]">
+        <div className="bg-[#204f43] text-white p-6 flex items-start justify-between border-b border-[#386758]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
               <Shuffle className="w-5 h-5" />
@@ -84,7 +84,7 @@ export const ShuffleModal: React.FC<ShuffleModalProps> = ({ isOpen, onClose, exa
                 onClick={() => setActiveCode(c.code)}
                 className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
                   activeCode === c.code
-                    ? 'bg-[#0284C7] text-white shadow-xs'
+                    ? 'bg-[#238773] text-white shadow-xs'
                     : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-300'
                 }`}
               >

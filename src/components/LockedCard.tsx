@@ -16,7 +16,7 @@ export const LockedCard: React.FC<LockedCardProps> = ({
 }) => {
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-[#F8FAFC] p-8 sm:p-12 text-center relative overflow-hidden">
+      <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-[#fffbf7] p-8 sm:p-12 text-center relative overflow-hidden">
         {/* Lock Watermark */}
         <div className="absolute top-4 right-4 text-slate-300 pointer-events-none">
           <Lock className="w-12 h-12 opacity-30" />
@@ -31,7 +31,7 @@ export const LockedCard: React.FC<LockedCardProps> = ({
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider">
               Đang Khóa: Cấp Độ {level}
             </span>
-            <h3 className="text-xl font-bold text-[#1E293B]">{title}</h3>
+            <h3 className="text-xl font-bold text-[#204f43]">{title}</h3>
             <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{description}</p>
           </div>
 

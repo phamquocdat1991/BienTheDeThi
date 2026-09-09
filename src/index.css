@@ -59,3 +59,57 @@
   }
 }
 
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --color-slate-50: #fafbf8;
+  --color-slate-100: #f0f4ef;
+  --color-slate-200: #dce7df;
+  --color-slate-300: #c3d3ca;
+  --color-slate-500: #61756d;
+  --color-slate-600: #4e665c;
+  --color-slate-700: #36574a;
+  --color-slate-800: #244d40;
+  --color-slate-900: #173e34;
+}
+
+@layer base {
+  body { background: #fffbf7; color: #173e34; }
+  button, input, textarea, select { font: inherit; }
+  button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid #a44f62; outline-offset: 3px; }
+  button { min-height: 40px; }
+  textarea { font-size: 1rem; line-height: 1.7; }
+}
+.sunrise-app { background: radial-gradient(ellipse at 0 30%, #e8f6ef 0, transparent 48%), radial-gradient(ellipse at 100% 0, #ffe6db 0, transparent 46%), #fffbf7; }
+.sunrise-header { background: #fffcf8f5; border-color: #e8ded4; box-shadow: 0 3px 20px #204e3e06; backdrop-filter: blur(16px); }
+.sunrise-header h1 { line-height: 1.5; }
+.sunrise-header button, .sunrise-header a { font-size: .875rem; }
+.sunrise-welcome { display: flex; justify-content: space-between; align-items: center; gap: 2rem; padding: 2rem; border: 1px solid #e5ded2; border-radius: 24px; background: linear-gradient(115deg,#e0f3e9 0%,#fff5e9 55%,#fbdcda 100%); }
+.sunrise-eyebrow { font-size: .75rem; font-weight: 800; letter-spacing: .13em; color: #397663; }
+.sunrise-welcome h2 { font-size: clamp(1.65rem, 3vw, 2.5rem); line-height: 1.25; letter-spacing: -.04em; font-weight: 800; margin: .65rem 0; }
+.sunrise-welcome h2 em { color: #ab4966; font-style: normal; }
+.sunrise-welcome p { font-size: 1rem; line-height: 1.7; color: #4e665c; max-width: 38rem; }
+.sunrise-tags { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1rem; }
+.sunrise-tags span { background: #ffffffad; border: 1px solid #ffffff; border-radius: 8px; padding: .4rem .6rem; font-size: .75rem; color: #285d4d; font-weight: 600; }
+.sunrise-note { max-width: 185px; flex-shrink: 0; font-family: Georgia, serif; font-style: italic; font-size: 1.3rem; color: #9a5063; line-height: 1.5; transform: rotate(-3deg); }
+.sunrise-note span { display: block; margin-top: .65rem; font: .75rem/1.6 var(--font-sans); color: #785e57; }
+.sunrise-app main > .max-w-4xl { max-width: 68rem; }
+.sunrise-app .text-xs { font-size: .875rem; line-height: 1.5; }
+.sunrise-app .text-\[11px\], .sunrise-app .text-\[10px\], .sunrise-app .text-\[9px\] { font-size: .75rem; }
+.sunrise-app nav ol li { min-width: 0; }
+.sunrise-app nav ol li > div:last-child > div { flex-wrap: wrap; }
+.sunrise-app nav ol li p { white-space: normal; }
+@media (max-width: 640px) {
+  .sunrise-header { position: relative; }
+  .sunrise-welcome { padding: 1.25rem; border-radius: 18px; }
+  .sunrise-note { display: none; }
+  .sunrise-app main { padding-top: 1.25rem; }
+  .sunrise-app nav { padding-inline: 1rem; }
+  .sunrise-app nav ol { gap: .5rem; }
+  .sunrise-app nav ol li { padding: .5rem; gap: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+@media print { .sunrise-app { background: white; } .sunrise-welcome { display: none; } }

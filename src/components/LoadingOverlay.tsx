@@ -29,19 +29,19 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#1E293B]/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-[#204f43]/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-8 sm:p-10 max-w-lg w-full shadow-2xl border border-slate-200 text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
         {/* Animated Icon */}
         <div className="relative w-20 h-20 mx-auto">
-          <div className="absolute inset-0 rounded-3xl bg-[#0284C7]/20 animate-ping" />
-          <div className="relative w-20 h-20 rounded-3xl bg-[#0284C7] flex items-center justify-center text-white shadow-xl shadow-[#0284C7]/30">
+          <div className="absolute inset-0 rounded-3xl bg-[#238773]/20 animate-ping" />
+          <div className="relative w-20 h-20 rounded-3xl bg-[#238773] flex items-center justify-center text-white shadow-xl shadow-[#238773]/30">
             <BrainCircuit className="w-10 h-10 animate-pulse" />
           </div>
         </div>
 
         {/* Text */}
         <div className="space-y-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#F0F9FF] text-[#0369A1] text-xs font-bold border border-[#BAE6FD]">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#eefaf5] text-[#176653] text-xs font-bold border border-[#b8dfce]">
             <Sparkles className="w-3.5 h-3.5 animate-spin" />
             <span>AI BIẾN THỂ ĐỀ THI ĐANG XỬ LÝ</span>
           </span>
@@ -54,7 +54,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
         </div>
 
         {/* Real Step Indicators */}
-        <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-slate-200 text-left space-y-3">
+        <div className="bg-[#fffbf7] rounded-2xl p-4 border border-slate-200 text-left space-y-3">
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             Tiến trình khảo thí chi tiết:
           </p>
@@ -69,7 +69,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                     {isDone ? (
                       <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
                     ) : isCurrent ? (
-                      <Loader2 className="w-4 h-4 text-[#0284C7] animate-spin" />
+                      <Loader2 className="w-4 h-4 text-[#238773] animate-spin" />
                     ) : (
                       <div className="w-4 h-4 rounded-full border border-slate-300 bg-white" />
                     )}
@@ -80,7 +80,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                         isDone
                           ? 'text-slate-700'
                           : isCurrent
-                          ? 'text-[#0369A1] font-bold'
+                          ? 'text-[#176653] font-bold'
                           : 'text-slate-400'
                       }`}
                     >
@@ -88,7 +88,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                     </p>
                     <p
                       className={`text-[10px] ${
-                        isCurrent ? 'text-[#0284C7]' : 'text-slate-400'
+                        isCurrent ? 'text-[#238773]' : 'text-slate-400'
                       }`}
                     >
                       {step.desc}

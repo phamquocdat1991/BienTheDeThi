@@ -79,7 +79,7 @@ export const Stepper: React.FC<StepperProps> = ({
 
     switch (stepId) {
       case 1: // Đề gốc
-        baseStatus = workflowState === 'EMPTY' ? 'processing' : 'completed';
+        baseStatus = workflowState === 'EMPTY' ? 'pending' : 'completed';
         break;
 
       case 2: // Phân tích
@@ -159,7 +159,7 @@ export const Stepper: React.FC<StepperProps> = ({
   return (
     <nav
       aria-label="Tiến trình biên soạn đề thi"
-      className="w-full bg-white border-b border-slate-200 shadow-xs py-3 px-4 sm:px-6 lg:px-8 sticky top-16 z-20"
+      className="w-full bg-white border-b border-slate-200 shadow-xs py-3 px-4 sm:px-6 lg:px-8 relative z-20"
     >
       <div className="max-w-7xl mx-auto">
         <ol className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
@@ -173,6 +173,11 @@ export const Stepper: React.FC<StepperProps> = ({
             return (
               <li
                 key={step.id}
+                role="button"
+                tabIndex={isClickable ? 0 : -1}
+                aria-disabled={!isClickable}
+                aria-current={isCurrentView ? 'step' : undefined}
+                onKeyDown={(e) => { if (isClickable && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSelectStep?.(step.id); } }}
                 onClick={() => {
                   if (isClickable) {
                     onSelectStep(step.id);
@@ -184,9 +189,9 @@ export const Stepper: React.FC<StepperProps> = ({
                   status === 'error'
                     ? 'bg-rose-50 border-rose-400 ring-2 ring-rose-300 shadow-xs'
                     : isCurrentView
-                    ? 'bg-[#F0F9FF] border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs'
+                    ? 'bg-[#eefaf5] border-[#238773] ring-2 ring-[#238773]/20 shadow-xs'
                     : status === 'completed'
-                    ? 'bg-[#F8FAFC] border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                    ? 'bg-[#fffbf7] border-slate-200 hover:bg-slate-100 hover:border-slate-300'
                     : status === 'processing'
                     ? 'bg-[#F0FDF4] border-[#10B981] animate-pulse'
                     : status === 'pending'
@@ -202,9 +207,9 @@ export const Stepper: React.FC<StepperProps> = ({
                       : status === 'completed'
                       ? 'bg-[#10B981] text-white shadow-xs'
                       : status === 'processing'
-                      ? 'bg-[#0284C7] text-white shadow-xs'
+                      ? 'bg-[#238773] text-white shadow-xs'
                       : isCurrentView
-                      ? 'bg-[#0284C7] text-white'
+                      ? 'bg-[#238773] text-white'
                       : status === 'locked'
                       ? 'bg-slate-200 text-slate-400'
                       : 'bg-slate-100 text-slate-600 border border-slate-200'
@@ -231,11 +236,11 @@ export const Stepper: React.FC<StepperProps> = ({
                         status === 'error'
                           ? 'text-rose-700'
                           : isCurrentView
-                          ? 'text-[#0369A1]'
+                          ? 'text-[#176653]'
                           : status === 'completed'
-                          ? 'text-[#334155]'
+                          ? 'text-[#386758]'
                           : status === 'processing'
-                          ? 'text-[#0284C7]'
+                          ? 'text-[#238773]'
                           : status === 'locked'
                           ? 'text-slate-400'
                           : 'text-slate-700'
@@ -252,7 +257,7 @@ export const Stepper: React.FC<StepperProps> = ({
                           : status === 'completed'
                           ? 'bg-[#DCFCE7] text-[#15803D]'
                           : status === 'processing'
-                          ? 'bg-[#E0F2FE] text-[#0369A1]'
+                          ? 'bg-[#def3e9] text-[#176653]'
                           : status === 'locked'
                           ? 'bg-slate-100 text-slate-400'
                           : 'bg-slate-100 text-slate-500'
@@ -275,7 +280,7 @@ export const Stepper: React.FC<StepperProps> = ({
                       status === 'error'
                         ? 'text-rose-600 font-medium'
                         : isCurrentView
-                        ? 'text-[#0284C7] font-medium'
+                        ? 'text-[#238773] font-medium'
                         : status === 'completed'
                         ? 'text-slate-500'
                         : 'text-slate-400'

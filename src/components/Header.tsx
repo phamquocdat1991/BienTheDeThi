@@ -21,24 +21,24 @@ export const Header: React.FC<HeaderProps> = ({
   const isStarted = workflowState !== 'EMPTY';
 
   return (
-    <header className="bg-[#1E293B] text-white border-b border-[#334155] sticky top-0 z-30 shadow-md">
+    <header className="sunrise-header border-b sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2.5 flex flex-wrap items-center justify-between gap-3">
         {/* Brand & Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0284C7] to-[#0369A1] flex items-center justify-center shadow-inner text-white font-bold shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#238773] to-[#176653] flex items-center justify-center shadow-inner text-white font-bold shrink-0">
             <BookOpenCheck className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-                AI BIẾN THỂ ĐỀ THI <span className="text-[#38BDF8] font-bold">3 CẤP ĐỘ</span>
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-[#174f45] flex items-center gap-1.5">
+                AI BIẾN THỂ ĐỀ THI <span className="text-[#238773] font-bold">3 CẤP ĐỘ</span>
               </h1>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40">
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#238773]/20 text-[#238773] border border-[#238773]/40">
                 Sư phạm Chuẩn hóa GDPT 2018
               </span>
             </div>
-            <p className="text-xs text-slate-300 flex items-center gap-1.5 flex-wrap">
-              <span>Phát triển bởi: <strong className="text-amber-300 font-bold">Anh Giáo PHẠM QUỐC ĐẠT</strong></span>
+            <p className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
+              <span>Phát triển bởi: <strong className="text-[#a44f62] font-bold">Anh Giáo PHẠM QUỐC ĐẠT</strong></span>
               <span className="hidden md:inline text-slate-500">•</span>
               <span className="hidden md:inline text-slate-400">Phân tích đề gốc • Tự giải lại • Kiểm định 8 tiêu chí</span>
             </p>
@@ -69,32 +69,32 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenApiKeyModal}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer active:scale-95 shadow-xs ${
               hasApiKey
-                ? 'bg-[#334155] hover:bg-slate-600 text-slate-100 border-slate-600'
-                : 'bg-amber-950/90 hover:bg-amber-900 text-amber-200 border-amber-500/80'
+                ? 'bg-white hover:bg-emerald-50 text-[#176653] border-emerald-200'
+                : 'bg-orange-50 hover:bg-orange-100 text-amber-900 border-orange-200'
             }`}
             title="Cài đặt API Key & Model"
           >
-            <Key className={`w-3.5 h-3.5 ${hasApiKey ? 'text-emerald-400' : 'text-amber-400'}`} />
+            <Key className={`w-3.5 h-3.5 ${hasApiKey ? 'text-emerald-400' : 'text-[#a44f62]'}`} />
             <span>{hasApiKey ? 'Cài đặt API' : 'Nhập Key'}</span>
           </button>
 
           {/* History Button */}
           <button
             onClick={onOpenHistoryModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#334155] hover:bg-slate-600 text-slate-100 hover:text-white text-xs font-bold transition border border-slate-600 cursor-pointer active:scale-95 shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-[#176653] text-xs font-bold transition border border-emerald-200 cursor-pointer active:scale-95 shadow-xs"
             title="Xem danh sách đề thi đã tạo & sao lưu"
           >
-            <History className="w-3.5 h-3.5 text-amber-400" />
+            <History className="w-3.5 h-3.5 text-[#a44f62]" />
             <span>Lịch sử đề</span>
           </button>
 
           {isStarted && (
             <button
               onClick={onReset}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#334155] hover:bg-slate-600 text-slate-100 hover:text-white text-xs font-semibold transition border border-slate-600 cursor-pointer shadow-xs active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-[#176653] text-xs font-semibold transition border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
               title="Bắt đầu phân tích đề mới"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-300" />
+              <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
               <span>Bắt đầu lại</span>
             </button>
           )}
