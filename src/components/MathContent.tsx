@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 interface MathContentProps {
   content: string;
@@ -25,7 +27,6 @@ function parseMathSegments(text: string): Segment[] {
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(text)) !== null) {
-    // Phần text trước match
     if (match.index > lastIndex) {
       segments.push({
         type: 'text',
@@ -49,7 +50,6 @@ function parseMathSegments(text: string): Segment[] {
     lastIndex = match.index + matchedStr.length;
   }
 
-  // Phần text còn lại sau cùng
   if (lastIndex < text.length) {
     segments.push({
       type: 'text',
@@ -61,23 +61,20 @@ function parseMathSegments(text: string): Segment[] {
 }
 
 /**
- * Render một biểu thức LaTeX bằng KaTeX
+ * Render một biểu thức LaTeX bằng thư viện KaTeX nội bộ (offline & an toàn XSS)
  */
 function renderKatexString(latex: string, displayMode = false): string | null {
   try {
-    const katex = (window as any).katex;
-    if (katex && typeof katex.renderToString === 'function') {
-      return katex.renderToString(latex, {
-        displayMode,
-        throwOnError: false,
-        strict: false,
-        trust: true,
-      });
-    }
+    return katex.renderToString(latex, {
+      displayMode,
+      throwOnError: false,
+      strict: false,
+      trust: false, // Tắt trust HTML để bảo vệ an toàn XSS theo chuẩn giáo dục
+    });
   } catch (err) {
     console.warn('Lỗi render KaTeX:', err);
+    return null;
   }
-  return null;
 }
 
 export const MathContent: React.FC<MathContentProps> = ({
@@ -89,7 +86,6 @@ export const MathContent: React.FC<MathContentProps> = ({
 
   if (!content) return null;
 
-  // Nếu không có ký hiệu math nào
   if (segments.length === 1 && segments[0].type === 'text') {
     return <span className={className}>{content}</span>;
   }
@@ -125,7 +121,7 @@ export const MathContent: React.FC<MathContentProps> = ({
           );
         }
 
-        // Fallback nếu KaTeX chưa sẵn sàng
+        // Fallback hiển thị mã LaTeX nếu KaTeX không thể render
         return (
           <code
             key={idx}

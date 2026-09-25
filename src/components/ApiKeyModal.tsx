@@ -10,8 +10,8 @@ import {
   X,
   Sparkles,
   Cpu,
-  Layers,
-  HelpCircle,
+  RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { AiProvider, ApiConfig } from '../types';
 import {
@@ -20,6 +20,9 @@ import {
   isValidGoogleAiApiKey,
   loadStoredApiConfig,
   saveStoredApiConfig,
+  testGoogleAiConnection,
+  ConnectionTestResult,
+  clearStoredApiKey,
 } from '../services/aiClientFactory';
 
 interface ApiKeyModalProps {
@@ -38,10 +41,15 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const [provider, setProvider] = useState<AiProvider>('gemini');
   const [geminiKey, setGeminiKey] = useState<string>('');
   const [agentPlatformKey, setAgentPlatformKey] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState<string>('gemini-3.7-flash');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-3.8-flash');
   const [showKey, setShowKey] = useState<boolean>(false);
+  const [saveToSessionOnly, setSaveToSessionOnly] = useState<boolean>(false);
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Trạng thái kiểm tra kết nối thật
+  const [isTesting, setIsTesting] = useState<boolean>(false);
+  const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,9 +57,17 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       setProvider(config.provider);
       setGeminiKey(config.geminiKey);
       setAgentPlatformKey(config.agentPlatformKey);
-      setSelectedModel(config.selectedModel);
+      setSelectedModel(config.selectedModel || 'gemini-3.8-flash');
       setSavedSuccess(false);
       setErrorMessage(null);
+      setTestResult(null);
+
+      try {
+        const storageType = sessionStorage.getItem('google_ai_storage_type');
+        setSaveToSessionOnly(storageType === 'session');
+      } catch {
+        // ignore
+      }
     }
   }, [isOpen, initialConfig]);
 
@@ -63,16 +79,31 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const handleProviderChange = (newProvider: AiProvider) => {
     setProvider(newProvider);
     setErrorMessage(null);
-    // Chọn model mặc định phù hợp với provider
+    setTestResult(null);
     if (newProvider === 'agent-platform') {
       if (!AGENT_PLATFORM_MODELS.some((m) => m.id === selectedModel)) {
         setSelectedModel('gemini-2.5-flash');
       }
     } else {
       if (!GEMINI_MODELS.some((m) => m.id === selectedModel)) {
-        setSelectedModel('gemini-3.7-flash');
+        setSelectedModel('gemini-3.8-flash');
       }
     }
+  };
+
+  const handleTestConnection = async () => {
+    if (!currentKey.trim()) {
+      setErrorMessage('Vui lòng nhập API Key trước khi kiểm tra kết nối.');
+      return;
+    }
+
+    setIsTesting(true);
+    setTestResult(null);
+    setErrorMessage(null);
+
+    const result = await testGoogleAiConnection(currentKey, provider);
+    setIsTesting(false);
+    setTestResult(result);
   };
 
   const handleSave = () => {
@@ -84,9 +115,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     }
 
     if (!isCurrentKeyValid) {
-      setErrorMessage(
-        'Định dạng API Key không hợp lệ. Khóa API Google hợp lệ thường bắt đầu bằng AIzaSy... hoặc AQ... (tối thiểu 10 ký tự).'
-      );
+      setErrorMessage('Độ dài API Key chưa hợp lệ (tối thiểu 8 ký tự, không chứa khoảng trắng).');
       return;
     }
 
@@ -97,13 +126,21 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       selectedModel,
     };
 
-    saveStoredApiConfig(newConfig);
+    saveStoredApiConfig(newConfig, saveToSessionOnly);
     setSavedSuccess(true);
     onConfigSaved(newConfig);
 
     setTimeout(() => {
       onClose();
     }, 800);
+  };
+
+  const handleClearKey = () => {
+    clearStoredApiKey();
+    setGeminiKey('');
+    setAgentPlatformKey('');
+    setTestResult(null);
+    setErrorMessage('Đã xóa API Key khỏi bộ nhớ trình duyệt.');
   };
 
   const modelsList = provider === 'agent-platform' ? AGENT_PLATFORM_MODELS : GEMINI_MODELS;
@@ -122,7 +159,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 Cài Đặt API Key & Model AI
               </h3>
               <p className="text-xs text-slate-300">
-                Nhập API Key Google của bạn để phân tích đề và tự động sinh 3 cấp độ biến thể
+                Cấu hình API Key Google để phân tích đề và tự động sinh 3 cấp độ đề thi biến thể
               </p>
             </div>
           </div>
@@ -224,10 +261,11 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     setGeminiKey(e.target.value);
                   }
                   setErrorMessage(null);
+                  setTestResult(null);
                 }}
                 placeholder={
                   provider === 'gemini'
-                    ? 'Nhập key bắt đầu bằng AIzaSy... hoặc AQ...'
+                    ? 'Nhập Google AI Key (AIzaSy...)'
                     : 'Nhập Agent Platform API Key...'
                 }
                 className={`w-full px-4 py-3 pr-20 rounded-xl border text-xs sm:text-sm font-mono text-slate-800 focus:outline-hidden transition ${
@@ -251,118 +289,149 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               </div>
             </div>
 
-            {/* Key format hint & validation status */}
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-500">
-                Hỗ trợ cả 2 định dạng khóa: <code className="font-mono text-slate-700">AIzaSy...</code> và <code className="font-mono text-slate-700">AQ...</code>
-              </span>
+            {/* Test Connection Button & Result */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTesting || !currentKey}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-50 transition cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isTesting ? 'animate-spin text-[#238773]' : ''}`} />
+                <span>{isTesting ? 'Đang kiểm tra kết nối...' : 'Kiểm tra kết nối'}</span>
+              </button>
+
               {currentKey && (
-                <span>
-                  {isCurrentKeyValid ? (
-                    <span className="text-[#15803D] font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
-                      Định dạng hợp lệ
-                    </span>
-                  ) : (
-                    <span className="text-amber-600 font-semibold flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                      Chưa đúng định dạng
-                    </span>
-                  )}
-                </span>
+                <button
+                  type="button"
+                  onClick={handleClearKey}
+                  className="text-xs text-rose-600 hover:underline cursor-pointer"
+                >
+                  Xóa Key khỏi máy
+                </button>
               )}
             </div>
+
+            {testResult && (
+              <div
+                className={`p-3 rounded-xl text-xs flex items-start gap-2 border ${
+                  testResult.success
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-rose-50 text-rose-800 border-rose-200'
+                }`}
+              >
+                {testResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <p className="font-semibold">{testResult.message}</p>
+                  {testResult.success && (
+                    <p className="text-[11px] text-emerald-600 mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Độ trễ mạng: {testResult.latencyMs}ms
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Model Selection */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700">
-              3. Chọn Mô hình AI Ưu tiên:
+              3. Chọn Mô hình AI ưu tiên:
             </label>
             <div className="space-y-2">
-              {modelsList.map((m) => {
-                const isSelected = selectedModel === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setSelectedModel(m.id)}
-                    className={`w-full p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
-                      isSelected
-                        ? 'border-[#238773] bg-[#eefaf5] ring-2 ring-[#238773]/20 shadow-xs'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">{m.name}</span>
-                        {m.recommended && (
-                          <span className="px-2 py-0.2 rounded-md bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold border border-[#86EFAC]">
-                            Khuyên dùng
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-500">{m.description}</p>
+              {modelsList.map((m) => (
+                <label
+                  key={m.id}
+                  className={`flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer ${
+                    selectedModel === m.id
+                      ? 'border-[#238773] bg-[#eefaf5] ring-1 ring-[#238773]'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="modelSelection"
+                    value={m.id}
+                    checked={selectedModel === m.id}
+                    onChange={() => setSelectedModel(m.id)}
+                    className="mt-1 text-[#238773] focus:ring-[#238773]"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900">{m.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                        {m.tag}
+                      </span>
                     </div>
-
-                    <div
-                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                        isSelected
-                          ? 'border-[#238773] bg-[#238773]'
-                          : 'border-slate-300 bg-white'
-                      }`}
-                    >
-                      {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
-                  </button>
-                );
-              })}
+                    <p className="text-[11px] text-slate-500 mt-0.5">{m.description}</p>
+                  </div>
+                </label>
+              ))}
             </div>
           </div>
 
-          {/* Privacy & Storage Guarantee */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5 text-xs text-slate-600">
-            <ShieldCheck className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" />
-            <p className="text-[11px] leading-relaxed">
-              <strong>Bảo mật tuyệt đối:</strong> API Key được lưu an toàn duy nhất trên trình duyệt của bạn (<code className="bg-slate-200 px-1 py-0.5 rounded">localStorage</code>) và chỉ được gửi trực tiếp tới máy chủ Google API để tạo nội dung.
-            </p>
+          {/* Session-only Storage Toggle */}
+          <div className="pt-2 border-t border-slate-100">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={saveToSessionOnly}
+                onChange={(e) => setSaveToSessionOnly(e.target.checked)}
+                className="mt-0.5 text-[#238773] rounded focus:ring-[#238773]"
+              />
+              <div>
+                <span className="text-xs font-semibold text-slate-800">
+                  Chỉ lưu trong phiên làm việc hiện tại (Tự xóa khi đóng trình duyệt)
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Khuyên dùng khi bạn thao tác trên máy tính phòng tin học trường học hoặc thiết bị dùng chung.
+                </p>
+              </div>
+            </label>
           </div>
 
-          {/* Error Message */}
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
-          {/* Saved Success Badge */}
           {savedSuccess && (
-            <div className="p-3 rounded-xl bg-[#DCFCE7] border border-[#86EFAC] text-[#15803D] text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#10B981]" />
-              <span>Đã lưu cấu hình API thành công! Đang đóng cửa sổ...</span>
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Đã lưu cấu hình API Key thành công! Đang tải lại...</span>
             </div>
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="p-4 sm:p-6 bg-[#fffbf7] border-t border-slate-200 flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition cursor-pointer"
-          >
-            Hủy
-          </button>
+        {/* Footer */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Key được lưu cục bộ trên thiết bị của bạn, không gửi qua máy chủ trung gian.</span>
+          </div>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#238773] hover:bg-[#176653] text-white text-xs font-bold shadow-md shadow-[#238773]/20 transition cursor-pointer"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Lưu Cấu Hình</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="px-5 py-2 text-xs font-bold text-white bg-[#238773] hover:bg-[#1b6b5b] rounded-xl transition shadow-sm cursor-pointer"
+            >
+              Lưu Cấu Hình
+            </button>
+          </div>
         </div>
       </div>
     </div>

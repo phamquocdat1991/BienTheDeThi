@@ -37,12 +37,34 @@ const STORAGE_HISTORY_KEY = 'bienthedethi_exam_history';
 const MAX_HISTORY_ITEMS = 15;
 
 /**
- * Lưu phiên làm việc hiện tại vào localStorage
+ * Loại bỏ chuỗi Base64 dung lượng lớn (PDF, ảnh) khỏi InputSource
+ * trước khi lưu vào localStorage để tránh lỗi QuotaExceededError (~5MB limit).
+ */
+function sanitizeSourceForStorage(source: InputSource | null): InputSource | null {
+  if (!source) return null;
+  return {
+    type: source.type,
+    fileName: source.fileName,
+    fileSize: source.fileSize,
+    mimeType: source.mimeType,
+    rawText: source.rawText,
+    // Không lưu chuỗi base64 lớn vào localStorage
+    imageBase64: undefined,
+    pdfBase64: undefined,
+  };
+}
+
+/**
+ * Lưu phiên làm việc hiện tại vào localStorage (an toàn dung lượng)
  */
 export function saveCurrentSession(session: ExamSessionData): void {
   try {
     session.updatedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(session));
+    const sanitizedSession: ExamSessionData = {
+      ...session,
+      lastInputSource: sanitizeSourceForStorage(session.lastInputSource),
+    };
+    localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(sanitizedSession));
   } catch (error) {
     console.warn('[Session] Không thể lưu phiên vào localStorage (có thể vượt dung lượng):', error);
   }
@@ -55,11 +77,7 @@ export function loadCurrentSession(): ExamSessionData | null {
   try {
     const raw = localStorage.getItem(STORAGE_SESSION_KEY);
     if (!raw) return null;
-    const data = JSON.parse(raw) as ExamSessionData;
-    if (data && data.workflowState && data.workflowState !== 'EMPTY') {
-      return data;
-    }
-    return null;
+    return parseSessionFromJson(raw);
   } catch (error) {
     console.error('[Session] Lỗi khi đọc phiên từ localStorage:', error);
     return null;
@@ -87,6 +105,11 @@ export function saveToHistory(session: ExamSessionData): void {
     const history = getExamHistory();
     const completedCount = [session.exam1, session.exam2, session.exam3].filter(Boolean).length;
 
+    const sanitizedSession: ExamSessionData = {
+      ...session,
+      lastInputSource: sanitizeSourceForStorage(session.lastInputSource),
+    };
+
     const historyItem: StoredExamHistoryItem = {
       id: session.id || `exam_${Date.now()}`,
       title: session.title || session.examAnalysis.examMetadata?.title || 'Đề kiểm tra không tên',
@@ -95,7 +118,7 @@ export function saveToHistory(session: ExamSessionData): void {
       totalQuestions: session.examAnalysis.questions?.length || 0,
       completedVariantsCount: completedCount,
       savedAt: new Date().toISOString(),
-      session,
+      session: sanitizedSession,
     };
 
     // Loại bỏ mục cũ nếu trùng id, chèn lên đầu
@@ -115,7 +138,9 @@ export function getExamHistory(): StoredExamHistoryItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_HISTORY_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as StoredExamHistoryItem[];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as StoredExamHistoryItem[];
   } catch (error) {
     console.error('[History] Lỗi khi đọc lịch sử đề:', error);
     return [];
@@ -138,7 +163,7 @@ export function deleteHistoryItem(id: string): StoredExamHistoryItem[] {
 }
 
 /**
- * Xuất toàn bộ phiên làm việc dạng file JSON để chia sẻ
+ * Xuất toàn bộ phiên làm việc dạng file JSON để chia sẻ / backup
  */
 export function exportSessionAsJson(session: ExamSessionData): void {
   const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(session, null, 2));
@@ -153,12 +178,38 @@ export function exportSessionAsJson(session: ExamSessionData): void {
 }
 
 /**
- * Nhập phiên làm việc từ file JSON
+ * Nhập và khôi phục trạng thái hợp lệ từ file JSON
  */
 export function parseSessionFromJson(jsonString: string): ExamSessionData {
   const data = JSON.parse(jsonString) as ExamSessionData;
-  if (!data.examAnalysis || !data.workflowState) {
+  if (!data || typeof data !== 'object' || !data.examAnalysis) {
     throw new Error('Tệp JSON không chứa dữ liệu đề thi hợp lệ.');
   }
-  return data;
+
+  // Khôi phục trạng thái làm việc ổn định nếu trước đó bị gián đoạn giữa chừng
+  let derivedState = data.workflowState || 'ANALYZED';
+  let derivedTab = data.activeStepTab || 2;
+
+  if (data.exam3) {
+    derivedState = 'COMPLETE';
+    derivedTab = 6;
+  } else if (data.exam2) {
+    derivedState = 'EXAM_2_COMPLETE';
+    derivedTab = 4;
+  } else if (data.exam1) {
+    derivedState = 'EXAM_1_COMPLETE';
+    derivedTab = 3;
+  } else if (data.examAnalysis) {
+    derivedState = 'ANALYZED';
+    derivedTab = 2;
+  }
+
+  return {
+    ...data,
+    id: data.id || `session_${Date.now()}`,
+    createdAt: data.createdAt || new Date().toISOString(),
+    updatedAt: data.updatedAt || new Date().toISOString(),
+    workflowState: derivedState,
+    activeStepTab: derivedTab,
+  };
 }

@@ -1,4 +1,17 @@
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  Table,
+  TableRow,
+  TableCell,
+  AlignmentType,
+  WidthType,
+  BorderStyle,
+} from 'docx';
 import { GeneratedExam } from '../types';
+import { escapeHtml } from './htmlSafety';
 
 /**
  * Format exam questions into clean readable text for copying
@@ -64,12 +77,9 @@ export function formatAnswersAsText(exam: GeneratedExam): string {
 }
 
 /**
- * Helper tải file Word (.doc) về máy
+ * Helper tải tệp Blob về máy tính
  */
-function downloadWordBlob(contentHtml: string, filename: string): void {
-  const blob = new Blob(['\ufeff' + contentHtml], {
-    type: 'application/msword;charset=utf-8',
-  });
+function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -80,8 +90,341 @@ function downloadWordBlob(contentHtml: string, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
+// ============================================================================
+// XUẤT TỆP WORD (.DOCX) CHUẨN NGHỊ ĐỊNH 30/2020/NĐ-CP
+// ============================================================================
+const BORDER_NONE = {
+  style: BorderStyle.NONE,
+  size: 0,
+  color: 'auto',
+};
+
+const CELL_BORDER_THIN = {
+  style: BorderStyle.SINGLE,
+  size: 4,
+  color: '888888',
+};
+
+export async function exportExamToDocx(
+  exam: GeneratedExam,
+  includeAnswers: boolean = true
+): Promise<void> {
+  const meta = exam.metadata;
+  const filename = `${(exam.title || 'de_thi').replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_')}_CapDo${exam.level}.docx`;
+
+  const sectionsList: any[] = [];
+
+  // Bảng Header chuẩn Bộ GD&ĐT
+  const headerTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: BORDER_NONE,
+      bottom: BORDER_NONE,
+      left: BORDER_NONE,
+      right: BORDER_NONE,
+      insideHorizontal: BORDER_NONE,
+      insideVertical: BORDER_NONE,
+    },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: (meta.schoolOrOrg || 'SỞ GIÁO DỤC VÀ ĐÀO TẠO').toUpperCase(), bold: true, size: 22, font: 'Times New Roman' }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: 'TRƯỜNG THPT CHUYÊN / THPT', bold: true, size: 22, font: 'Times New Roman' }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: '-----------------------', size: 20, font: 'Times New Roman' }),
+                ],
+              }),
+            ],
+          }),
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: 'KỲ THI KIỂM TRA ĐỊNH KỲ', bold: true, size: 22, font: 'Times New Roman' }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: `MÔN: ${(meta.subject || 'TOÁN HỌC').toUpperCase()} - ${meta.grade || 'LỚP 10'}`, bold: true, size: 22, font: 'Times New Roman' }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: `Thời gian: ${meta.durationMinutes || 45} phút (không kể thời gian phát đề)`, italics: true, size: 20, font: 'Times New Roman' }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+
+  sectionsList.push(headerTable);
+
+  // Tiêu đề bài thi
+  sectionsList.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 200, after: 100 },
+      children: [
+        new TextRun({
+          text: exam.title.toUpperCase(),
+          bold: true,
+          size: 26,
+          font: 'Times New Roman',
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+      children: [
+        new TextRun({
+          text: `(Cấp độ: ${exam.levelName} - ${exam.levelDescription})`,
+          italics: true,
+          size: 20,
+          font: 'Times New Roman',
+        }),
+      ],
+    }),
+    new Paragraph({
+      spacing: { after: 250 },
+      children: [
+        new TextRun({
+          text: 'Họ và tên thí sinh: ............................................................................ Số báo danh: ........................ Mã đề: 001',
+          size: 22,
+          font: 'Times New Roman',
+        }),
+      ],
+    })
+  );
+
+  // Danh sách câu hỏi
+  exam.questions.forEach((q, idx) => {
+    sectionsList.push(
+      new Paragraph({
+        spacing: { before: 150, after: 80 },
+        children: [
+          new TextRun({
+            text: `Câu ${q.number || idx + 1}: `,
+            bold: true,
+            size: 24,
+            font: 'Times New Roman',
+          }),
+          new TextRun({
+            text: q.questionText,
+            size: 24,
+            font: 'Times New Roman',
+          }),
+        ],
+      })
+    );
+
+    // Phương án trắc nghiệm
+    if (q.options && q.options.length > 0) {
+      const optionsText = q.options
+        .map((opt) => `${opt.label}. ${opt.text}`)
+        .join('          ');
+
+      sectionsList.push(
+        new Paragraph({
+          indent: { left: 400 },
+          spacing: { after: 100 },
+          children: [
+            new TextRun({
+              text: optionsText,
+              size: 22,
+              font: 'Times New Roman',
+            }),
+          ],
+        })
+      );
+    } else if (q.type === 'essay') {
+      sectionsList.push(
+        new Paragraph({
+          indent: { left: 400 },
+          spacing: { after: 150 },
+          children: [
+            new TextRun({
+              text: '....................................................................................................................................................................................',
+              italics: true,
+              size: 20,
+              color: '888888',
+              font: 'Times New Roman',
+            }),
+          ],
+        })
+      );
+    }
+  });
+
+  // Nếu xuất bản dành cho Giáo viên (kèm lời giải chi tiết)
+  if (includeAnswers) {
+    sectionsList.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 400, after: 200 },
+        children: [
+          new TextRun({
+            text: '-------------------------------------------------------------------------------------------------------------',
+            size: 20,
+            font: 'Times New Roman',
+          }),
+        ],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 200, after: 150 },
+        children: [
+          new TextRun({
+            text: 'ĐÁP ÁN VÀ HƯỚNG DẪN GIẢI CHI TIẾT',
+            bold: true,
+            size: 26,
+            font: 'Times New Roman',
+          }),
+        ],
+      })
+    );
+
+    // Bảng đáp án nhanh
+    const answerCells = exam.questions.map(
+      (q, idx) =>
+        new TableCell({
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({ text: `C${q.number || idx + 1}`, bold: true, size: 20, font: 'Times New Roman' }),
+              ],
+            }),
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({ text: q.correctAnswer || '-', bold: true, size: 22, color: '204f43', font: 'Times New Roman' }),
+              ],
+            }),
+          ],
+          borders: {
+            top: CELL_BORDER_THIN,
+            bottom: CELL_BORDER_THIN,
+            left: CELL_BORDER_THIN,
+            right: CELL_BORDER_THIN,
+          },
+        })
+    );
+
+    const answerTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [new TableRow({ children: answerCells })],
+    });
+
+    sectionsList.push(answerTable);
+
+    // Lời giải chi tiết
+    exam.questions.forEach((q, idx) => {
+      sectionsList.push(
+        new Paragraph({
+          spacing: { before: 180, after: 60 },
+          children: [
+            new TextRun({
+              text: `Câu ${q.number || idx + 1} [Đáp án: ${q.correctAnswer}]: `,
+              bold: true,
+              size: 22,
+              font: 'Times New Roman',
+            }),
+            new TextRun({
+              text: `(${q.difficulty || 'Thông hiểu'} - ${q.points || 0.5}đ)`,
+              italics: true,
+              size: 20,
+              font: 'Times New Roman',
+            }),
+          ],
+        })
+      );
+
+      if (q.solveSteps && q.solveSteps.length > 0) {
+        q.solveSteps.forEach((s, sIdx) => {
+          sectionsList.push(
+            new Paragraph({
+              indent: { left: 300 },
+              children: [
+                new TextRun({
+                  text: `- Bước ${sIdx + 1}: ${s}`,
+                  size: 21,
+                  font: 'Times New Roman',
+                }),
+              ],
+            })
+          );
+        });
+      }
+
+      if (q.explanation) {
+        sectionsList.push(
+          new Paragraph({
+            indent: { left: 300 },
+            spacing: { after: 100 },
+            children: [
+              new TextRun({
+                text: `* Lời giải: ${q.explanation}`,
+                size: 21,
+                font: 'Times New Roman',
+              }),
+            ],
+          })
+        );
+      }
+    });
+  }
+
+  // Khởi tạo tài liệu Word chuẩn A4 theo Nghị định 30/2020/NĐ-CP
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: {
+              top: 1134, // 2.0 cm
+              bottom: 1134, // 2.0 cm
+              left: 1701, // 3.0 cm (đóng gáy bài thi)
+              right: 1134, // 2.0 cm
+            },
+          },
+        },
+        children: sectionsList,
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  downloadBlob(blob, filename);
+}
+
+// ============================================================================
+// XUẤT TỆP WORD (.DOC) TƯƠNG THÍCH CAO & AN TOÀN HTML ESCAPED
+// ============================================================================
 const WORD_BASE_CSS = `
-  @page { size: A4 portrait; margin: 2cm 2cm 2cm 2cm; }
+  @page { size: A4 portrait; margin: 2cm 2cm 2cm 3cm; }
   body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.4; color: #000000; }
   .header-table { width: 100%; border: none; margin-bottom: 15px; border-collapse: collapse; }
   .header-table td { vertical-align: top; padding: 2px 4px; }
@@ -106,7 +449,7 @@ function renderExamQuestionsHtml(exam: GeneratedExam, isStudentMode = false): st
     .map(
       (q, idx) => `
     <div class="question">
-      <div class="question-title">Câu ${q.number || idx + 1}: ${q.questionText}</div>
+      <div class="question-title">Câu ${q.number || idx + 1}: ${escapeHtml(q.questionText)}</div>
       ${
         q.options && q.options.length > 0
           ? `
@@ -114,7 +457,7 @@ function renderExamQuestionsHtml(exam: GeneratedExam, isStudentMode = false): st
           <tr>
             ${q.options
               .slice(0, 2)
-              .map((opt) => `<td><strong>${opt.label}.</strong> ${opt.text}</td>`)
+              .map((opt) => `<td><strong>${opt.label}.</strong> ${escapeHtml(opt.text)}</td>`)
               .join('')}
           </tr>
           ${
@@ -123,7 +466,7 @@ function renderExamQuestionsHtml(exam: GeneratedExam, isStudentMode = false): st
             <tr>
               ${q.options
                 .slice(2, 4)
-                .map((opt) => `<td><strong>${opt.label}.</strong> ${opt.text}</td>`)
+                .map((opt) => `<td><strong>${opt.label}.</strong> ${escapeHtml(opt.text)}</td>`)
                 .join('')}
             </tr>
           `
@@ -135,7 +478,6 @@ function renderExamQuestionsHtml(exam: GeneratedExam, isStudentMode = false): st
           ? `
         <div class="essay-lines">
           <em>Bài làm:</em><br>
-          ....................................................................................................................................................................<br>
           ....................................................................................................................................................................<br>
           ....................................................................................................................................................................
         </div>
@@ -152,7 +494,7 @@ function renderAnswersAndSolutionsHtml(exam: GeneratedExam): string {
   return `
     <div class="answers-header">ĐÁP ÁN VÀ HƯỚNG DẪN CHẤM CHI TIẾT</div>
     <p style="text-align: center; font-style: italic; margin-bottom: 15px;">
-      Môn: ${exam.metadata.subject || 'Toán học'} • Khối: ${exam.metadata.grade || 'Lớp 10'} • Cấp độ: ${exam.levelName}
+      Môn: ${escapeHtml(exam.metadata.subject || 'Toán học')} • Khối: ${escapeHtml(exam.metadata.grade || 'Lớp 10')} • Cấp độ: ${escapeHtml(exam.levelName)}
     </p>
 
     <p><strong>I. BẢNG ĐÁP ÁN NHANH</strong></p>
@@ -161,27 +503,27 @@ function renderAnswersAndSolutionsHtml(exam: GeneratedExam): string {
         ${exam.questions.map((q, idx) => `<th>Câu ${q.number || idx + 1}</th>`).join('')}
       </tr>
       <tr>
-        ${exam.questions.map((q) => `<td><strong>${q.correctAnswer}</strong></td>`).join('')}
+        ${exam.questions.map((q) => `<td><strong>${escapeHtml(q.correctAnswer)}</strong></td>`).join('')}
       </tr>
     </table>
 
-    <p style="margin-top: 20px;"><strong>II. HƯỚNG DẪN GIẢI CHI TIẾT VÀ TIÊU CHÍ CHẤM</strong></p>
+    <p style="margin-top: 20px;"><strong>II. HƯỚNG DẪN GIẢI CHI TIẾT</strong></p>
     <div>
       ${exam.questions
         .map(
           (q, idx) => `
         <div class="solution-item">
-          <strong>Câu ${q.number || idx + 1} (Đáp án ${q.correctAnswer}):</strong>
-          <p style="margin: 2px 0;"><em>Mức độ: ${q.difficulty || 'Thông hiểu'} | Chủ đề: ${q.topic || 'Trọng tâm bài học'}</em></p>
+          <strong>Câu ${q.number || idx + 1} (Đáp án ${escapeHtml(q.correctAnswer)}):</strong>
+          <p style="margin: 2px 0;"><em>Mức độ: ${escapeHtml(q.difficulty || 'Thông hiểu')} | Chủ đề: ${escapeHtml(q.topic || 'Trọng tâm bài học')}</em></p>
           ${
             q.solveSteps && q.solveSteps.length > 0
               ? `<p style="margin: 2px 0;"><strong>Các bước thực hiện:</strong></p><ul>${q.solveSteps
-                  .map((s) => `<li>${s}</li>`)
+                  .map((s) => `<li>${escapeHtml(s)}</li>`)
                   .join('')}</ul>`
               : ''
           }
-          <p style="margin: 2px 0;"><strong>Lời giải chi tiết:</strong> ${q.explanation || 'Đang cập nhật'}</p>
-          <p style="margin: 2px 0; color: #444;"><em>Ghi chú biến thể:</em> ${q.changesFromOriginal || 'Bản tương đương đề gốc'}</p>
+          <p style="margin: 2px 0;"><strong>Lời giải chi tiết:</strong> ${escapeHtml(q.explanation || 'Đang cập nhật')}</p>
+          <p style="margin: 2px 0; color: #444;"><em>Ghi chú biến thể:</em> ${escapeHtml(q.changesFromOriginal || 'Bản tương đương đề gốc')}</p>
         </div>
       `
         )
@@ -191,143 +533,85 @@ function renderAnswersAndSolutionsHtml(exam: GeneratedExam): string {
 }
 
 /**
- * 1. XUẤT ĐỀ THI CHO HỌC SINH LÀM BÀI (Không kèm đáp án)
+ * Xuất file Word (.docx hoặc .doc tương thích)
  */
-export function exportStudentExamDoc(exam: GeneratedExam): void {
+export async function exportToWordDoc(exam: GeneratedExam, includeSolutions = true): Promise<void> {
+  // Thử xuất file DOCX chuẩn trước
+  try {
+    await exportExamToDocx(exam, includeSolutions);
+    return;
+  } catch (err) {
+    console.warn('Xuất DOCX thất bại, chuyển sang định dạng Word HTML tương thích:', err);
+  }
+
+  // Fallback xuất Word HTML .doc an toàn
   const contentHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><meta charset='utf-8'><title>${exam.title} - Đề Thi Học Sinh</title><style>${WORD_BASE_CSS}</style></head>
+    <head><meta charset='utf-8'><title>${escapeHtml(exam.title)}</title><style>${WORD_BASE_CSS}</style></head>
     <body>
-      <table class="header-table">
-        <tr>
-          <td style="text-align: center; width: 45%;">
-            <strong>SỞ GD&ĐT / TRƯỜNG: ........................</strong><br>
-            <em>Tổ Chuyên môn: ${exam.metadata.subject || 'Bộ môn'}</em>
-          </td>
-          <td style="text-align: center; width: 55%;">
-            <strong>${exam.title.toUpperCase()}</strong><br>
-            <strong>CẤP ĐỘ ${exam.level}: ${exam.levelName.toUpperCase()}</strong><br>
-            <em>Thời gian làm bài: ${exam.metadata.durationMinutes || 45} phút</em>
-          </td>
-        </tr>
-      </table>
-
-      <div class="info-bar">
-        Họ và tên thí sinh: .......................................................................... Lớp: ................. SBD: ....................
-      </div>
-
-      ${renderExamQuestionsHtml(exam, true)}
-
-      <div style="text-align: center; margin-top: 30px; font-weight: bold;">
-        ---------- HẾT ----------<br>
-        <span style="font-size: 11pt; font-weight: normal; font-style: italic;">(Cán bộ coi thi không giải thích gì thêm)</span>
-      </div>
+      <div class="title">${escapeHtml(exam.title.toUpperCase())}</div>
+      <div class="subtitle">(${escapeHtml(exam.levelName)} - ${escapeHtml(exam.levelDescription)})</div>
+      ${renderExamQuestionsHtml(exam, !includeSolutions)}
+      ${includeSolutions ? renderAnswersAndSolutionsHtml(exam) : ''}
     </body>
     </html>
   `;
 
-  const sanitizedTitle = exam.title.replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
-  downloadWordBlob(contentHtml, `${sanitizedTitle}_DeHocSinh_CapDo${exam.level}.doc`);
+  const blob = new Blob(['\ufeff' + contentHtml], { type: 'application/msword;charset=utf-8' });
+  const filename = `${(exam.title || 'de_thi').replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_')}_CapDo${exam.level}.doc`;
+  downloadBlob(blob, filename);
 }
 
 /**
- * 2. XUẤT ĐÁP ÁN & HƯỚNG DẪN CHẤM CHI TIẾT DÀNH CHO GIÁO VIÊN
+ * Xuất cả 3 cấp độ đề thi vào 1 file
  */
-export function exportTeacherAnswerDoc(exam: GeneratedExam): void {
-  const contentHtml = `
-    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><meta charset='utf-8'><title>${exam.title} - Đáp Án & Hướng Dẫn Chấm</title><style>${WORD_BASE_CSS}</style></head>
-    <body>
-      <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 16pt;">${exam.title.toUpperCase()}</h2>
-        <p style="margin: 4px 0; font-size: 13pt; font-weight: bold;">CẤP ĐỘ ${exam.level}: ${exam.levelName}</p>
-      </div>
-
-      ${renderAnswersAndSolutionsHtml(exam)}
-    </body>
-    </html>
-  `;
-
-  const sanitizedTitle = exam.title.replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
-  downloadWordBlob(contentHtml, `${sanitizedTitle}_DapAnChiTiet_CapDo${exam.level}.doc`);
-}
-
-/**
- * 3. XUẤT TRỌN GÓI: ĐỀ THI + ĐÁP ÁN (Full Bundle)
- */
-export function exportToWordDoc(exam: GeneratedExam, includeAnswers = true): void {
-  const contentHtml = `
-    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><meta charset='utf-8'><title>${exam.title}</title><style>${WORD_BASE_CSS}</style></head>
-    <body>
-      <table class="header-table">
-        <tr>
-          <td style="text-align: center; width: 45%;">
-            <strong>SỞ GD&ĐT / TRƯỜNG: ........................</strong><br>
-            <em>Tổ Chuyên môn: ${exam.metadata.subject || 'Bộ môn'}</em>
-          </td>
-          <td style="text-align: center; width: 55%;">
-            <strong>${exam.title.toUpperCase()}</strong><br>
-            <strong>CẤP ĐỘ ${exam.level}: ${exam.levelName.toUpperCase()}</strong><br>
-            <em>Thời gian làm bài: ${exam.metadata.durationMinutes || 45} phút</em>
-          </td>
-        </tr>
-      </table>
-
-      <div class="info-bar">
-        Họ và tên thí sinh: .......................................................................... Lớp: ................. SBD: ....................
-      </div>
-
-      ${renderExamQuestionsHtml(exam, false)}
-
-      ${includeAnswers ? `<div class="page-break"></div>${renderAnswersAndSolutionsHtml(exam)}` : ''}
-    </body>
-    </html>
-  `;
-
-  const sanitizedTitle = exam.title.replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
-  downloadWordBlob(contentHtml, `${sanitizedTitle}_CapDo${exam.level}.doc`);
-}
-
-/**
- * 4. XUẤT TRỌN BỘ CẢ 3 CẤP ĐỘ BIẾN THỂ (Bộ 3 Đề)
- */
-export function exportAllThreeVariantsDoc(
+export async function exportAllThreeVariantsDoc(
   exam1: GeneratedExam,
   exam2: GeneratedExam,
   exam3: GeneratedExam
-): void {
+): Promise<void> {
   const contentHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><meta charset='utf-8'><title>Trọn Bộ 3 Cấp Độ Đề Thi Biến Thể</title><style>${WORD_BASE_CSS}</style></head>
     <body>
-      <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px double #000; padding-bottom: 15px;">
-        <h1 style="margin: 0; font-size: 18pt;">BỘ ĐỀ THI BIẾN THỂ 3 CẤP ĐỘ CHUẨN SƯ PHẠM</h1>
-        <p style="margin: 5px 0; font-size: 13pt;">Môn: ${exam1.metadata.subject || 'Đa môn'} • Khối: ${exam1.metadata.grade || 'Toàn cấp'}</p>
-        <p style="margin: 2px 0; font-size: 11pt; font-style: italic;">Hệ thống biên soạn & kiểm định độc lập 8 tiêu chí</p>
-      </div>
+      <div class="title">BỘ 03 CẤP ĐỘ ĐỀ THI BIẾN THỂ CHUẨN SƯ PHẠM</div>
+      <div class="subtitle">${escapeHtml(exam1.title)}</div>
 
-      <h2 style="font-size: 16pt; color: #0284C7; margin-top: 10px;">PHẦN 1: ĐỀ BIẾN THỂ CẤP ĐỘ 1 (ĐỔI DỮ KIỆN & SỐ LIỆU)</h2>
-      ${renderExamQuestionsHtml(exam1, false)}
-      <div class="page-break"></div>
+      <div style="border-top: 2px solid #204f43; margin: 20px 0;"></div>
+      <h2 style="color: #204f43;">I. ${escapeHtml(exam1.levelName)}</h2>
+      ${renderExamQuestionsHtml(exam1)}
       ${renderAnswersAndSolutionsHtml(exam1)}
 
       <div class="page-break"></div>
-      <h2 style="font-size: 16pt; color: #0284C7; margin-top: 20px;">PHẦN 2: ĐỀ BIẾN THỂ CẤP ĐỘ 2 (DẠNG BÀI TƯƠNG ĐƯƠNG)</h2>
-      ${renderExamQuestionsHtml(exam2, false)}
-      <div class="page-break"></div>
+      <h2 style="color: #204f43;">II. ${escapeHtml(exam2.levelName)}</h2>
+      ${renderExamQuestionsHtml(exam2)}
       ${renderAnswersAndSolutionsHtml(exam2)}
 
       <div class="page-break"></div>
-      <h2 style="font-size: 16pt; color: #0284C7; margin-top: 20px;">PHẦN 3: ĐỀ BIẾN THỂ CẤP ĐỘ 3 (PHÂN HÓA & VẬN DỤNG SÂU)</h2>
-      ${renderExamQuestionsHtml(exam3, false)}
-      <div class="page-break"></div>
+      <h2 style="color: #204f43;">III. ${escapeHtml(exam3.levelName)}</h2>
+      ${renderExamQuestionsHtml(exam3)}
       ${renderAnswersAndSolutionsHtml(exam3)}
     </body>
     </html>
   `;
 
-  const sanitizedTitle = (exam1.metadata.subject || 'Bo_De_3_Cap_Do')
-    .replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
-  downloadWordBlob(contentHtml, `TronBo_3_DeBienThe_${sanitizedTitle}.doc`);
+  const blob = new Blob(['\ufeff' + contentHtml], { type: 'application/msword;charset=utf-8' });
+  downloadBlob(blob, `Bo_3_De_Thi_Bien_The_Tron_Goi.doc`);
 }
+
+/**
+ * Xuất đề thi cho Học sinh (không kèm đáp án)
+ */
+export function exportStudentExamDoc(exam: GeneratedExam): void {
+  exportToWordDoc(exam, false);
+}
+
+/**
+ * Xuất đề thi kèm đáp án và hướng dẫn chấm cho Giáo viên
+ */
+export function exportTeacherExamDoc(exam: GeneratedExam): void {
+  exportToWordDoc(exam, true);
+}
+
+export const exportTeacherAnswerDoc = exportTeacherExamDoc;
+

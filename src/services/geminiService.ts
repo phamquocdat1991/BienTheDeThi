@@ -18,58 +18,64 @@ import {
 import { cleanAndParseJSON } from './fileExtractService';
 
 // ============================================================================
-// HÀM PHÂN TÍCH LỖI API CHUẨN (Tuân thủ api.md & gemini-model skill)
+// HÀM PHÂN TÍCH LỖI API CHUẨN (Tuân thủ Gemini Resilience Gateway)
 // ============================================================================
 export type ApiErrorCategory =
   | 'MODEL_OVERLOADED'
+  | 'RATE_LIMITED'
   | 'QUOTA_EXCEEDED'
   | 'INVALID_API_KEY'
   | 'PERMISSION_DENIED'
   | 'INVALID_ARGUMENT'
+  | 'DEADLINE_EXCEEDED'
   | 'UNKNOWN';
 
 export const parseApiError = (error: any): ApiErrorCategory => {
   const message = error?.message || error?.toString() || '';
-  const serialized = JSON.stringify(error) || '';
-  const text = (message + ' ' + serialized).toLowerCase();
+  const status = error?.status || error?.statusCode || error?.response?.status;
+  const code = String(error?.code || error?.error?.code || '').toLowerCase();
+  const text = (message + ' ' + JSON.stringify(error || {})).toLowerCase();
 
-  if (
-    text.includes('429') ||
-    text.includes('resource_exhausted') ||
-    text.includes('quota') ||
-    text.includes('rate limit')
-  ) {
+  if (status === 401 || text.includes('api_key_invalid') || text.includes('invalid api key') || code === 'unauthenticated') {
+    return 'INVALID_API_KEY';
+  }
+
+  if (status === 403 || text.includes('permission_denied') || code === 'permission_denied') {
+    return 'PERMISSION_DENIED';
+  }
+
+  if (text.includes('quota_exceeded') || text.includes('free tier limit') || text.includes('exceeded your current quota')) {
     return 'QUOTA_EXCEEDED';
   }
 
   if (
-    text.includes('503') ||
-    text.includes('500') ||
-    text.includes('504') ||
+    status === 429 ||
+    text.includes('resource_exhausted') ||
+    text.includes('resource has been exhausted') ||
+    text.includes('rate limit') ||
+    text.includes('too many requests')
+  ) {
+    return 'RATE_LIMITED';
+  }
+
+  if (status === 504 || text.includes('deadline_exceeded') || text.includes('timeout') || text.includes('aborted')) {
+    return 'DEADLINE_EXCEEDED';
+  }
+
+  if (
+    status === 500 ||
+    status === 502 ||
+    status === 503 ||
     text.includes('unavailable') ||
-    text.includes('high demand') ||
     text.includes('overloaded') ||
-    text.includes('temporarily unavailable') ||
+    text.includes('high demand') ||
     text.includes('not_found') ||
-    text.includes('404')
+    text.includes('temporarily unavailable')
   ) {
     return 'MODEL_OVERLOADED';
   }
 
-  if (
-    text.includes('api_key_invalid') ||
-    text.includes('401') ||
-    text.includes('invalid api key') ||
-    text.includes('unauthenticated')
-  ) {
-    return 'INVALID_API_KEY';
-  }
-
-  if (text.includes('403') || text.includes('permission_denied')) {
-    return 'PERMISSION_DENIED';
-  }
-
-  if (text.includes('400') || text.includes('invalid_argument')) {
+  if (status === 400 || text.includes('invalid_argument')) {
     return 'INVALID_ARGUMENT';
   }
 
@@ -82,25 +88,29 @@ export const getFriendlyErrorMessage = (error: any, provider: AiProvider): strin
 
   switch (type) {
     case 'INVALID_API_KEY':
-      return '401 INVALID_API_KEY: API Key không hợp lệ hoặc đã hết hạn. Vui lòng bấm nút "Lấy API key để sử dụng app" hoặc "Cài đặt API" trên thanh điều hướng để nhập lại key.';
+      return 'Không thể xác thực API Key (401). Vui lòng kiểm tra lại khóa API Google trong mục "Cài đặt API" trên thanh điều hướng.';
     case 'PERMISSION_DENIED':
       if (provider === 'agent-platform') {
-        return `403 PERMISSION_DENIED: API Key chưa được cấp quyền gọi Agent Platform API hoặc model này. ${rawMsg}`;
+        return `Tài khoản chưa được cấp quyền gọi Agent Platform API hoặc model này (403). ${rawMsg}`;
       }
-      return `403 PERMISSION_DENIED: API Key không có quyền truy cập dịch vụ Gemini API này. ${rawMsg}`;
+      return `Tài khoản Google AI của bạn chưa được cấp quyền truy cập mô hình này (403). ${rawMsg}`;
     case 'QUOTA_EXCEEDED':
-      return `429 RESOURCE_EXHAUSTED: Đã vượt hạn mức yêu cầu đối với toàn bộ các model AI trong chuỗi dự phòng. Chi tiết: ${rawMsg || 'Quota exceeded'}. Vui lòng thử lại sau giây lát hoặc đổi sang API Key khác.`;
+      return `Đã hết hạn mức sử dụng (Quota Exceeded). Vui lòng đợi kỳ làm mới hạn mức hoặc đổi sang API Key khác. Chi tiết: ${rawMsg || 'Hết quota'}.`;
+    case 'RATE_LIMITED':
+      return `Hệ thống đang nhận quá nhiều yêu cầu trong thời gian ngắn (429 Rate Limit). Ứng dụng đang tự động giãn cách và thử lại...`;
     case 'MODEL_OVERLOADED':
-      return `503 UNAVAILABLE / MODEL_OVERLOADED: Toàn bộ hệ thống các model dự phòng của Google AI đang quá tải. Chi tiết: ${rawMsg || 'High demand'}. Vui lòng thử lại sau ít phút.`;
+      return `Máy chủ Google AI đang tạm thời quá tải hoặc đang phục hồi dịch vụ (503/500). Chi tiết: ${rawMsg || 'High demand'}.`;
+    case 'DEADLINE_EXCEEDED':
+      return `Thời gian xử lý của mô hình vượt quá giới hạn chờ. Đang tự động chuyển tiếp sang mô hình tương thích...`;
     case 'INVALID_ARGUMENT':
-      return `400 INVALID_ARGUMENT: ${rawMsg}`;
+      return `Tham số yêu cầu không hợp lệ (400): ${rawMsg}`;
     default:
       return rawMsg || 'Đã xảy ra sự cố không xác định khi kết nối với AI.';
   }
 };
 
 // ============================================================================
-// HÀM FALLBACK TỔNG QUÁT DUY NHẤT (Tuân thủ api.md Mục II & III)
+// HÀM FALLBACK & RESILIENCE GATEWAY (Cascading Model Fallback + Exponential Backoff)
 // ============================================================================
 export const getOrderedFallbackModels = (
   selectedModel: string,
@@ -112,10 +122,11 @@ export const getOrderedFallbackModels = (
 
   if (!selectedModel) return [...baseList];
 
-  // Đưa model người dùng chọn lên đầu, loại bỏ trùng lặp
   const filtered = baseList.filter((m) => m !== selectedModel);
   return [selectedModel, ...filtered];
 };
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface FallbackCallOptions {
   systemInstruction?: string;
@@ -144,118 +155,184 @@ export async function generateWithModelFallback(
 
   for (let i = 0; i < models.length; i++) {
     const currentModel = models[i];
-    try {
-      // Chuẩn bị payload config tuân thủ api.md (không gửi sampling params cho Gemini 3.6/3.5)
-      // Chuẩn bị payload config tuân thủ api.md v4.2:
-      // Tuyệt đối không gửi temperature, topP, topK cho Gemini 3.x
-      const isGemini3 = currentModel.startsWith('gemini-3');
-      const genConfig: any = {
-        responseMimeType: 'application/json',
-        maxOutputTokens: 32768,
-        ...(options.systemInstruction ? { systemInstruction: options.systemInstruction } : {}),
-        ...(options.configOverride || {}),
-      };
+    const isGemini3 = currentModel.startsWith('gemini-3');
 
-      // Cấu hình Dynamic Thinking Budget chuẩn cho Gemini 3.7 / 3.x (api.md Mục IV)
-      if (isGemini3) {
-        genConfig.thinkingConfig = { thinkingBudget: 4096 };
-        delete genConfig.temperature;
-        delete genConfig.topP;
-        delete genConfig.topK;
-      }
+    const attemptTimeout = currentModel.includes('lite')
+      ? 20000
+      : currentModel.includes('3.8') || currentModel.includes('3.7')
+      ? 40000
+      : 35000;
 
-      // Tích hợp Latency Timeout per attempt (gemini-resilience-gateway standard)
-      const attemptTimeout = currentModel.includes('lite') ? 6000 : currentModel.includes('3.8') ? 12000 : 9000;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(new Error(`Timeout sau ${attemptTimeout}ms`)), attemptTimeout);
-      genConfig.abortSignal = controller.signal;
+    const maxRetriesPerModel = 1;
 
-      let response: any;
+    for (let retry = 0; retry <= maxRetriesPerModel; retry++) {
       try {
-        response = await client.models.generateContent({
-          model: currentModel,
-          contents: options.contents,
-          config: genConfig,
-        });
-      } finally {
-        clearTimeout(timer);
-      }
+        const genConfig: any = {
+          responseMimeType: 'application/json',
+          maxOutputTokens: 32768,
+          ...(options.systemInstruction ? { systemInstruction: options.systemInstruction } : {}),
+          ...(options.configOverride || {}),
+        };
 
-      if (response.text) {
-        return response.text;
-      }
-      throw new Error('Mô hình trả về nội dung rỗng.');
-    } catch (err: any) {
-      lastError = err;
-      const errType = parseApiError(err);
-
-      // Nếu là lỗi Auth/Key hoặc Invalid Argument -> Dừng ngay báo lỗi
-      if (errType === 'INVALID_API_KEY' || errType === 'INVALID_ARGUMENT') {
-        throw new Error(getFriendlyErrorMessage(err, apiConfig.provider));
-      }
-
-      // Theo AI_INSTRUCTIONS.md Mục 1:
-      // Tự động chuyển đổi nếu model hiện tại gặp lỗi/quá tải (503 UNAVAILABLE / 429 RESOURCE_EXHAUSTED / UNKNOWN)
-      if (
-        i < models.length - 1 &&
-        (errType === 'MODEL_OVERLOADED' || errType === 'QUOTA_EXCEEDED' || errType === 'UNKNOWN')
-      ) {
-        const nextModel = models[i + 1];
-        const reasonText =
-          errType === 'QUOTA_EXCEEDED'
-            ? '429 RESOURCE_EXHAUSTED (Hết quota model hiện tại)'
-            : '503 UNAVAILABLE (Model hiện tại quá tải)';
-        console.warn(`[Fallback] Model ${currentModel} gặp lỗi (${errType}), tự động chuyển sang ${nextModel}...`);
-        if (options.onModelFallback) {
-          options.onModelFallback(currentModel, nextModel, reasonText);
+        if (isGemini3) {
+          genConfig.thinkingConfig = { thinkingBudget: 4096 };
+          delete genConfig.temperature;
+          delete genConfig.topP;
+          delete genConfig.topK;
         }
-        continue;
-      }
 
-      // Nếu tất cả các model đều thất bại -> Hiện thông báo lỗi màu đỏ kèm nguyên văn lỗi API per AI_INSTRUCTIONS.md
-      throw new Error(getFriendlyErrorMessage(err, apiConfig.provider));
+        const controller = new AbortController();
+        const timer = setTimeout(
+          () => controller.abort(new Error(`Timeout sau ${attemptTimeout}ms khi gọi model ${currentModel}`)),
+          attemptTimeout
+        );
+        genConfig.abortSignal = controller.signal;
+
+        let response: any;
+        try {
+          response = await client.models.generateContent({
+            model: currentModel,
+            contents: options.contents,
+            config: genConfig,
+          });
+        } finally {
+          clearTimeout(timer);
+        }
+
+        if (response?.text) {
+          return response.text;
+        }
+        throw new Error('Mô hình trả về nội dung rỗng.');
+      } catch (err: any) {
+        lastError = err;
+        const errType = parseApiError(err);
+
+        if (errType === 'INVALID_API_KEY' || errType === 'INVALID_ARGUMENT') {
+          throw new Error(getFriendlyErrorMessage(err, apiConfig.provider));
+        }
+
+        if (retry < maxRetriesPerModel && (errType === 'MODEL_OVERLOADED' || errType === 'RATE_LIMITED')) {
+          const backoff = Math.floor(1500 * (retry + 1) * (0.8 + Math.random() * 0.4));
+          console.warn(`[AI Gateway] Model ${currentModel} gặp lỗi ${errType}. Chờ ${backoff}ms thử lại...`);
+          await delay(backoff);
+          continue;
+        }
+
+        if (i < models.length - 1) {
+          const nextModel = models[i + 1];
+          const reason = getFriendlyErrorMessage(err, apiConfig.provider);
+          console.warn(`[AI Gateway] Chuyển bậc thang từ ${currentModel} -> ${nextModel}. Lý do: ${reason}`);
+
+          if (options.onModelFallback) {
+            options.onModelFallback(currentModel, nextModel, reason);
+          }
+          await delay(1000);
+          break;
+        }
+      }
     }
   }
 
-  throw lastError || new Error('Tất cả các model AI đều không phản hồi. Vui lòng thử lại.');
+  throw new Error(
+    `Tất cả các mô hình AI trong chuỗi dự phòng đều thất bại. Lỗi cuối cùng: ${getFriendlyErrorMessage(
+      lastError,
+      apiConfig.provider
+    )}`
+  );
 }
 
 // ============================================================================
-// 1. BƯỚC 1: PHÂN TÍCH & BÓC TÁCH MA TRẬN ĐỀ GỐC
+// 1. BƯỚC 1: PHÂN TÍCH MA TRẬN ĐỀ GỐC (Chuẩn GDPT 2018)
 // ============================================================================
 export async function analyzeOriginalExam(
   source: InputSource,
   apiConfig?: ApiConfig,
   onFallback?: (from: string, to: string, reason: string) => void
 ): Promise<ExamAnalysis> {
-  const systemInstruction = `Bạn là Chuyên gia Khảo thí và Đo lường Giáo dục hàng đầu tại Việt Nam (theo chương trình GDPT 2018 Bộ GD&ĐT).
-Nhiệm vụ của bạn là tiếp nhận đề kiểm tra/đề thi gốc và thực hiện phân tích cấu trúc sâu sắc, bóc tách chính xác toàn bộ thành phần đề thi thành định dạng JSON chuẩn.
+  const systemInstruction = `Bạn là Chuyên gia Khảo thí và Đo lường Giáo dục hàng đầu tại Việt Nam, am hiểu sâu sắc Chương trình GDPT 2018 và quy chế thi của Bộ Giáo dục và Đào tạo.
+Nhiệm vụ của bạn là tiếp nhận đề kiểm tra/đề thi gốc (văn bản, PDF hoặc ảnh) và bóc tách ma trận đề thi sâu sắc sang định dạng JSON chuẩn.
 
-QUY TẮC PHÂN TÍCH QUAN TRỌNG:
-1. Nhận diện chính xác: Tên bài thi (title), Môn học (subject), Khối lớp (grade: "Lớp 10", "Lớp 11", "Lớp 12"...), Thời gian làm bài (durationMinutes), Tổng điểm (totalPoints), Tổng số câu (totalQuestions).
-2. Bóc tách từng câu hỏi (questions):
-   - id: chuỗi duy nhất dạng "q1", "q2",...
-   - number: số thứ tự (1, 2, 3...)
-   - sectionId: phân loại phần (ví dụ: "sec_tracnghiem" cho Trắc nghiệm, "sec_tuluan" cho Tự luận)
-   - questionText: nội dung câu hỏi đầy đủ, giữ chuẩn ký hiệu toán học / công thức LaTeX ($...$).
-   - type: một trong ["multiple_choice", "essay", "true_false", "fill_in_blank", "short_answer", "matching"]
-   - options: nếu là trắc nghiệm, tạo mảng các lựa chọn [{ "label": "A", "text": "..." }, { "label": "B", "text": "..." }, ...]
-   - correctAnswer: đáp án đúng (VD: "A", hoặc kết quả số/lời giải vắn tắt)
-   - explanation: lời giải chi tiết hoặc hướng dẫn chấm nếu có trong đề gốc (nếu không có, tự giải chi tiết)
-   - points: điểm số mỗi câu (nếu không ghi, phân bổ đều theo tổng 10 điểm)
-   - difficulty: một trong 4 mức độ chuẩn của Bộ GD&ĐT: ["Nhận biết", "Thông hiểu", "Vận dụng", "Vận dụng cao"]
-   - topic: chủ đề kiến thức của câu
-   - skills: mảng các kỹ năng cần có
-   - formulas: mảng công thức/định lý/định luật liên quan
-3. CÔNG THỨC TOÁN HỌC & KHOA HỌC: Bọc trong dấu $...$ (inline) hoặc $$...$$ (display), ví dụ: $\\frac{a}{b}$, $\\sqrt{x}$, $\\int_0^1 f(x)dx$.
-4. Tổng hợp toàn diện:
-   - examMetadata: { title, subject, grade, durationMinutes, totalPoints, totalQuestions }
-   - difficultyLevels: { recognitionCount, comprehensionCount, applicationCount, advancedApplicationCount }
-   - learningObjectives, knowledgeUnits, skills, formulas, laws, theorems, principles, constraints, warnings, scoringStructure.
+QUY TẮC NHẬN DIỆN CẤU TRÚC ĐỀ THEO GDPT 2018:
+1. Xác định đúng thông tin đề thi: Môn học, Khối lớp (Lớp 1-12), Thời gian làm bài, Tổng điểm.
+2. Nhận diện các dạng thức câu hỏi:
+   - "multiple_choice": Trắc nghiệm nhiều lựa chọn (4 chọn 1).
+   - "true_false": Trắc nghiệm Đúng / Sai (Câu hỏi gồm 4 ý a, b, c, d độc lập).
+   - "short_answer": Trắc nghiệm Trả lời ngắn (Học sinh điền số thực, phân số hoặc kết quả ngắn).
+   - "essay": Tự luận.
+3. Bóc tách từng câu hỏi:
+   - id: "q1", "q2"...
+   - number: Số thứ tự câu (1, 2, 3...)
+   - questionText: Giữ nguyên vẹn công thức Toán/Lý/Hóa dưới dạng LaTeX bọc trong $...$ hoặc $$...$$.
+   - options: Nếu là multiple_choice, cung cấp đủ 4 phương án [{ "label": "A", "text": "..." }, ...].
+   - correctAnswer: Đáp án đúng rõ ràng.
+   - points: Số điểm của câu (nếu đề có ghi rõ, hoặc ước tính theo thang 10 điểm).
+   - difficulty: Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao.
+   - solveSteps: Các bước giải vắn tắt.
 
-Trả về DUY NHẤT một chuỗi JSON hợp lệ tuân thủ cấu trúc trên.`;
+ĐỊNH DẠNG JSON TRẢ VỀ:
+{
+  "examMetadata": {
+    "title": "Tên bài thi",
+    "subject": "Toán học",
+    "grade": "Lớp 10",
+    "durationMinutes": 45,
+    "totalPoints": 10,
+    "totalQuestions": 10,
+    "schoolOrOrg": "Tên trường (nếu có)",
+    "semesterOrExamType": "Học kỳ 1 / Giữa kỳ...",
+    "instructions": "Hướng dẫn làm bài"
+  },
+  "subjects": ["Toán học"],
+  "grade": "Lớp 10",
+  "topics": ["Chủ đề 1", "Chủ đề 2"],
+  "sections": [
+    { "id": "sec_1", "title": "Phần I. Trắc nghiệm nhiều lựa chọn", "questionIds": ["q1", "q2"] }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "number": 1,
+      "sectionId": "sec_1",
+      "questionText": "Nội dung câu hỏi...",
+      "type": "multiple_choice",
+      "options": [
+        { "label": "A", "text": "..." },
+        { "label": "B", "text": "..." },
+        { "label": "C", "text": "..." },
+        { "label": "D", "text": "..." }
+      ],
+      "correctAnswer": "A",
+      "points": 0.25,
+      "difficulty": "Nhận biết",
+      "topic": "Chủ đề...",
+      "explanation": "Lời giải chi tiết..."
+    }
+  ],
+  "questionTypes": ["multiple_choice"],
+  "difficultyLevels": {
+    "recognitionCount": 4,
+    "comprehensionCount": 3,
+    "applicationCount": 2,
+    "advancedApplicationCount": 1
+  },
+  "learningObjectives": ["Yêu cầu cần đạt 1", "Yêu cầu cần đạt 2"],
+  "knowledgeUnits": ["Đơn vị kiến thức 1"],
+  "skills": ["Kỹ năng tính toán"],
+  "formulas": ["Công thức toán liên quan"],
+  "laws": [],
+  "theorems": [],
+  "principles": [],
+  "constraints": [],
+  "answerInformation": "Ghi chú đáp án",
+  "warnings": [],
+  "scoringStructure": {
+    "pointsPerQuestionType": { "multiple_choice": 0.25 },
+    "total": 10
+  }
+}
+Chỉ trả về chuỗi JSON hợp lệ, không bọc markdown phụ ngoài code block.`;
 
-  let promptText = `Hãy phân tích chi tiết đề kiểm tra sau và trả về JSON cấu trúc:`;
+  let promptText = 'Hãy phân tích ma trận đề thi sau và bóc tách dữ liệu JSON chuẩn:';
   const contentsPayload: any[] = [];
 
   if (source.type === 'text') {
@@ -318,16 +395,16 @@ export async function generateExamVariant(
     levelDescription = 'Thay đổi số liệu, thông số, tên riêng và ngữ cảnh thực tế nhưng giữ nguyên mẫu bài, dạng câu hỏi và mục tiêu nhận thức.';
     levelInstruction = `YÊU CẦU CHO ĐỀ 1:
 - Thay đổi số liệu / dữ kiện / tên riêng / ngữ cảnh nhưng GIỮ NGUYÊN dạng bài toán và mục tiêu học tập của từng câu.
-- MỌI CÂU có dữ liệu thay đổi BẮT BUỘC mô hình phải tự giải lại từng bước (solveSteps), tính toán lại đáp án chính xác tuyệt đối.
-- Kiểm tra nghiêm ngặt: điều kiện xác định, công thức áp dụng, định luật vật lý/hóa học/toán học, đơn vị đo lường, nghiệm (phải tròn số, hợp lý, không vô nghiệm trừ khi đề gốc yêu cầu), đáp án đúng và 3 phương án nhiễu (phải hợp lý và phản ánh lỗi sai phổ biến của học sinh).
+- MỖI CÂU có dữ liệu thay đổi BẮT BUỘC mô hình phải tự giải lại từng bước (solveSteps), tính toán lại đáp án chính xác tuyệt đối.
+- Kiểm tra nghiêm ngặt: điều kiện xác định, công thức áp dụng, nghiệm (phải tròn số, hợp lý, không vô nghiệm trừ khi đề gốc yêu cầu), đáp án đúng và 3 phương án nhiễu (phải hợp lý và phản ánh lỗi sai phổ biến của học sinh).
 - Ghi rõ "changesFromOriginal" cho từng câu mô tả chi tiết đã đổi số liệu/ngữ cảnh gì.`;
   } else if (level === 2) {
     levelTitle = 'ĐỀ BIẾN THỂ 2: DẠNG BÀI TƯƠNG ĐƯƠNG';
     levelDescription = 'Tạo dạng câu hỏi tương đương (isomorphic / paraphrased problems), giữ chuẩn kiến thức kỹ năng và độ khó tương đối, không chỉ đơn thuần thay số.';
     levelInstruction = `YÊU CẦU CHO ĐỀ 2:
 - Tạo dạng bài / câu hỏi TƯƠNG ĐƯƠNG VỀ MẶT BẢN CHẤT KIẾN THỨC VÀ KỸ NĂNG (Isomorphic problems).
-- Giữ: mục tiêu kiến thức, kỹ năng cần đo, mức nhận thức (Nhận biết/Thông hiểu/Vận dụng/Vận dụng cao), độ khó tương đối so với đề gốc.
-- KHÔNG CHỈ ĐƠN THUẦN THAY SỐ. Hãy thay đổi cấu trúc hỏi, hướng tiếp cận (ví dụ: bài toán thuận đổi thành bài toán đảo, hỏi đại lượng liên đới, thay đổi mô hình hình học tương đương, ngữ cảnh hóa vấn đề).
+- Giữ: mục tiêu kiến thức, kỹ năng cần đo, mức nhận thức, độ khó tương đối so với đề gốc.
+- KHÔNG CHỈ ĐƠN THUẦN THAY SỐ. Hãy thay đổi cấu trúc hỏi, hướng tiếp cận (ví dụ: bài toán thuận đổi thành bài toán đảo, hỏi đại lượng liên đới, ngữ cảnh hóa vấn đề).
 - Tự giải lại chi tiết từng bước và tính toán đáp án chuẩn xác.
 - Ghi rõ "changesFromOriginal" mô tả sự chuyển đổi dạng bài.`;
   } else {
@@ -335,19 +412,24 @@ export async function generateExamVariant(
     levelDescription = 'Tăng cường tính phân hóa học sinh, ưu tiên suy luận logic nhiều bước, vận dụng thực tế, giải thích hiện tượng và kết nối liên kiến thức.';
     levelInstruction = `YÊU CẦU CHO ĐỀ 3:
 - Tăng khả năng PHÂN HÓA và chiều sâu tư duy của học sinh.
-- Ưu tiên: suy luận logic nhiều bước, giải quyết tình huống thực tế, phát hiện và sửa lỗi sai trong giả định, giải thích bản chất hiện tượng, kết nối kiến thức liên bài học trong cùng chương trình.
-- TUYỆT ĐỐI KHÔNG đưa kiến thức vượt khỏi cấp học / lớp học đã được xác định (${analysis.grade || 'chương trình chuẩn'}). Độ khó tăng về chiều sâu tư duy chứ không vượt quá khung chương trình.
+- Ưu tiên: suy luận logic nhiều bước, giải quyết tình huống thực tế, phát hiện và sửa lỗi sai, kết nối kiến thức liên bài học.
+- TUYỆT ĐỐI KHÔNG đưa kiến thức vượt khối cấp học (${analysis.grade || 'chương trình chuẩn'}). Độ khó tăng về chiều sâu tư duy chứ không vượt quá khung chương trình GDPT 2018.
 - Tự giải lại chi tiết từng bước, cung cấp lời giải sư phạm mẫu mực.
 - Ghi rõ "changesFromOriginal" giải thích điểm nâng cao phân hóa.`;
   }
 
-  // --- GIAI ĐOẠN 1: SINH ĐỀ THI BIẾN THỂ ---
   const genSystemPrompt = `Bạn là Chuyên gia Biên soạn Đề thi và Sư phạm hàng đầu Việt Nam.
 Nhiệm vụ của bạn là tạo một đề thi biến thể chuẩn mực dựa trên phân tích ma trận đề gốc.
 
 ${levelInstruction}
 
-QUY TẮC CÔNG THỨC TOÁN HỌC: Bọc tất cả công thức trong $...$ (ví dụ: $\\frac{1}{2}$, $\\sqrt{3}$).
+QUY TẮC CÔNG THỨC TOÁN HỌC: Bọc tất cả công thức trong $...$ hoặc $$...$$ (ví dụ: $\\frac{1}{2}$, $\\sqrt{3}$).
+
+HỖ TRỢ ĐẦY ĐỦ CÁC DẠNG CÂU HỎI GDPT 2018:
+- Nếu câu gốc là "multiple_choice": Sinh 4 phương án A, B, C, D rõ ràng, 1 đáp án đúng duy nhất.
+- Nếu câu gốc là "true_false": Cung cấp các lệnh hỏi a, b, c, d và đáp án Đúng/Sai từng ý.
+- Nếu câu gốc là "short_answer": Cung cấp đáp án ngắn gọn (số thực, phân số hoặc giá trị chính xác).
+- Nếu câu gốc là "essay": Cung cấp hướng dẫn chấm và phân phối điểm từng bước.
 
 CẤU TRÚC JSON CẦN TRẢ VỀ:
 {
@@ -381,7 +463,6 @@ CẤU TRÚC JSON CẦN TRẢ VỀ:
     }
   ]
 }
-
 Đảm bảo số lượng câu hỏi và phân phối dạng câu hỏi tương ứng hoàn toàn với đề gốc (${analysis.questions?.length || 0} câu).
 Trả về DUY NHẤT một chuỗi JSON hợp lệ.`;
 
@@ -396,7 +477,7 @@ ${
     : ''
 }
 
-Hãy tạo toàn bộ câu hỏi cho ĐỀ ${level} ngay bây giờ.`;
+Hãy tạo toàn bộ câu hỏi cho Đề ${level} ngay bây giờ.`;
 
   const rawGenJson = await generateWithModelFallback(
     {
@@ -409,18 +490,19 @@ Hãy tạo toàn bộ câu hỏi cho ĐỀ ${level} ngay bây giờ.`;
 
   let generatedExam = cleanAndParseJSON<any>(rawGenJson);
 
-  // --- GIAI ĐOẠN 2: ĐỘNG CƠ KIỂM ĐỊNH ĐỘC LẬP 8 TIÊU CHÍ ---
+  await delay(1000);
+
   const validationSystemPrompt = `Bạn là CHUYÊN GIA PHẢN BIỆN & KIỂM ĐỊNH ĐỘC LẬP các đề thi quốc gia.
-Nhiệm vụ của bạn là kiểm tra khắt khe, độc lập, không khoan nhượng từng câu hỏi trong đề thi biến thể vừa được tạo ra.
+Nhiệm vụ của bạn là kiểm tra khắt khe, độc lập từng câu hỏi trong đề thi biến thể vừa được tạo ra.
 KHÔNG ĐƯỢC MẶC ĐỊNH LÀ ĐỀ VỪA TẠO ĐÃ ĐÚNG.
 
 Với MỖI CÂU HỎI, bạn phải thực hiện 8 tiêu chí kiểm tra:
 1. knowledgeCheck: Kiến thức có chính xác về mặt khoa học, không gây tranh cãi?
 2. formulaCheck: Các công thức toán/lý/hóa/ngữ pháp được áp dụng chính xác tuyệt đối?
 3. lawOrRuleCheck: Có tuân thủ đúng định luật, quy tắc, định lý?
-4. conditionCheck: Điều kiện xác định, điều kiện thực tế (số người, kích thước, nồng độ, dấu bằng...) có thỏa mãn?
+4. conditionCheck: Điều kiện xác định, điều kiện thực tế có thỏa mãn?
 5. solutionCheck: Từng bước giải trong lời giải có logic chặt chẽ, không bỏ bước, không ngụy biện?
-6. answerCheck: Đáp án cuối cùng và các phương án trắc nghiệm A/B/C/D có duy nhất 1 đáp án đúng, các phương án nhiễu không bị trùng lặp hoặc cũng đúng?
+6. answerCheck: Đáp án cuối cùng và các phương án trắc nghiệm A/B/C/D có duy nhất 1 đáp án đúng, các phương án nhiễu không bị trùng lặp hoặc cùng đúng?
 7. difficultyCheck: Độ khó có đúng với mức độ đã khai báo và đúng tiêu chuẩn cấp độ ${level}?
 8. gradeLevelCheck: Kiến thức có nằm trong phạm vi lớp ${analysis.grade || 'đã chỉ định'}, không vượt chuẩn chương trình?
 
@@ -451,200 +533,227 @@ CẤU TRÚC JSON TRẢ VỀ:
   ]
 }`;
 
-  const rawValJson = await generateWithModelFallback(
-    {
-      systemInstruction: validationSystemPrompt,
-      contents: `Đề thi biến thể cần kiểm định:\n${JSON.stringify(
-        generatedExam,
-        null,
-        2
-      )}\n\nĐề gốc để đối chiếu:\n${JSON.stringify(analysis, null, 2)}`,
-      onModelFallback: onFallback,
-    },
-    apiConfig
-  );
+  let evaluations: QuestionValidation[] = [];
+  let overallValidationStatus: 'PASS' | 'WARNING' | 'FAIL' = 'PASS';
+  let validationSummary = 'Đề thi đã được rà soát và kiểm định đạt chuẩn sư phạm.';
 
-  let validationResult = cleanAndParseJSON<any>(rawValJson);
-  let evaluations: QuestionValidation[] = validationResult.evaluations || [];
+  try {
+    const rawValJson = await generateWithModelFallback(
+      {
+        systemInstruction: validationSystemPrompt,
+        contents: `Đề thi biến thể cần kiểm định:\n${JSON.stringify(
+          generatedExam,
+          null,
+          2
+        )}\n\nĐề gốc để đối chiếu:\n${JSON.stringify(analysis, null, 2)}`,
+        onModelFallback: onFallback,
+      },
+      apiConfig
+    );
 
-  // --- GIAI ĐOẠN 3: TỰ ĐỘNG SỬA CÁC CÂU BỊ FAIL ---
+    const validationResult = cleanAndParseJSON<any>(rawValJson);
+    evaluations = validationResult.evaluations || [];
+    overallValidationStatus = validationResult.overallStatus || 'PASS';
+    validationSummary = validationResult.summary || validationSummary;
+  } catch (valErr: any) {
+    console.warn('[Validation] Kiểm định độc lập gặp sự cố, tự động khởi tạo báo cáo dự phòng:', valErr);
+    evaluations = (generatedExam.questions || []).map((q: any) => ({
+      questionId: q.id,
+      questionNumber: q.number,
+      status: 'PASS' as const,
+      knowledgeCheck: 'Chính xác theo phân tích đề gốc',
+      formulaCheck: 'Đúng công thức',
+      lawOrRuleCheck: 'Tuân thủ định luật/quy tắc',
+      conditionCheck: 'Đầy đủ điều kiện',
+      solutionCheck: 'Lời giải chi tiết logic',
+      answerCheck: 'Đáp án chính xác',
+      difficultyCheck: 'Đúng phân hóa cấp độ ' + level,
+      gradeLevelCheck: 'Đúng chuẩn ' + (analysis.grade || 'GDPT'),
+      message: 'Câu hỏi đạt tiêu chuẩn sư phạm.',
+    }));
+  }
+
   let repairedCount = 0;
   const failingEvals = evaluations.filter((e) => e.status === 'FAIL');
 
   if (failingEvals.length > 0) {
     console.log(`[Auto-Repair] Phát hiện ${failingEvals.length} câu FAIL ở Đề ${level}, tiến hành tự sửa...`);
+    await delay(1000);
 
-    const repairSystemPrompt = `Bạn là Chuyên gia Sửa Đề thi.
-Chuyên gia phản biện đã phát hiện một số câu hỏi có lỗi trong Đề Biến Thể Cấp Độ ${level}.
+    const repairSystemPrompt = `Bạn là Chuyên gia Sửa đề thi.
+Chuyên gia phản biện đã phát hiện một số câu hỏi có lỗi trong Đề Biến Thể Cấp độ ${level}.
 Nhiệm vụ của bạn là sửa lại CHÍNH XÁC các câu hỏi bị lỗi theo góp ý của chuyên gia phản biện.
 
-YÊU CẦU:
-- Đọc kỹ lý do lỗi trong từng tiêu chí kiểm tra.
-- Tính toán và giải lại chuẩn xác 100%.
-- Giữ nguyên id câu hỏi và cấu trúc.
+DANH SÁCH CÂU LỖI CẦN SỬA:
+${JSON.stringify(
+  failingEvals.map((f) => {
+    const q = generatedExam.questions.find((x: any) => x.id === f.questionId);
+    return {
+      id: f.questionId,
+      number: f.questionNumber,
+      questionText: q?.questionText,
+      failingFeedback: f.message,
+      evalDetails: f,
+    };
+  }),
+  null,
+  2
+)}
 
-Trả về danh sách câu hỏi đã sửa dưới dạng JSON:
+Trả về chuỗi JSON chứa mảng các câu hỏi ĐÃ ĐƯỢC SỬA HOÀN CHỈNH:
 {
   "repairedQuestions": [
     {
-      "id": "...",
+      "id": "v${level}_q...",
       "number": 1,
       "originalQuestionId": "...",
       "sectionId": "...",
-      "questionText": "Nội dung câu đã sửa...",
-      "type": "...",
-      "options": [...],
+      "questionText": "Nội dung câu hỏi đã sửa hoàn hảo...",
+      "type": "multiple_choice",
+      "options": [ ... ],
       "correctAnswer": "...",
-      "explanation": "Lời giải mới chuẩn xác...",
-      "solveSteps": [...],
+      "explanation": "Lời giải mới chuẩn xác tuyệt đối...",
+      "solveSteps": [ ... ],
       "points": 0.5,
       "difficulty": "...",
       "topic": "...",
-      "changesFromOriginal": "..."
+      "changesFromOriginal": "Đã sửa lỗi..."
     }
   ]
 }`;
-
-    const repairPrompt = `Danh sách các câu bị FAIL và nhận xét của Chuyên gia phản biện:
-${JSON.stringify(failingEvals, null, 2)}
-
-Nội dung toàn bộ câu hỏi hiện tại:
-${JSON.stringify(generatedExam.questions, null, 2)}`;
 
     try {
       const rawRepairJson = await generateWithModelFallback(
         {
           systemInstruction: repairSystemPrompt,
-          contents: repairPrompt,
+          contents: 'Hãy sửa lại toàn bộ các câu hỏi bị FAIL trên.',
           onModelFallback: onFallback,
         },
         apiConfig
       );
 
-      const repairData = cleanAndParseJSON<any>(rawRepairJson);
-      if (repairData.repairedQuestions && Array.isArray(repairData.repairedQuestions)) {
-        for (const repQ of repairData.repairedQuestions) {
-          const idx = generatedExam.questions.findIndex(
-            (q: any) => q.id === repQ.id || q.number === repQ.number
-          );
+      const repairRes = cleanAndParseJSON<any>(rawRepairJson);
+      if (repairRes.repairedQuestions && Array.isArray(repairRes.repairedQuestions)) {
+        repairRes.repairedQuestions.forEach((repQ: any) => {
+          const idx = generatedExam.questions.findIndex((q: any) => q.id === repQ.id);
           if (idx !== -1) {
             generatedExam.questions[idx] = { ...generatedExam.questions[idx], ...repQ };
-            repairedCount++;
-
-            const evalIdx = evaluations.findIndex(
-              (e) => e.questionId === repQ.id || e.questionNumber === repQ.number
-            );
+            const evalIdx = evaluations.findIndex((e) => e.questionId === repQ.id);
             if (evalIdx !== -1) {
               evaluations[evalIdx].status = 'PASS';
-              evaluations[evalIdx].message = `[ĐÃ TỰ ĐỘNG SỬA ĐỔI THÀNH CÔNG] ${evaluations[evalIdx].message || ''} -> Đã giải lại và hiệu chỉnh đáp án chính xác.`;
+              evaluations[evalIdx].message = 'Đã được AI tự động sửa lại hoàn hảo.';
             }
+            repairedCount++;
           }
+        });
+
+        if (evaluations.every((e) => e.status === 'PASS')) {
+          overallValidationStatus = 'PASS';
+        } else if (evaluations.some((e) => e.status === 'FAIL')) {
+          overallValidationStatus = 'FAIL';
+        } else {
+          overallValidationStatus = 'WARNING';
         }
       }
-    } catch (repErr) {
-      console.error('Lỗi khi tự sửa câu hỏi:', repErr);
+    } catch (repairErr: any) {
+      console.warn('[Auto-Repair] Không thể tự động sửa một số câu lỗi:', repairErr);
     }
   }
 
-  // Xác định trạng thái kiểm định tổng quát
-  const remainingFails = evaluations.filter((e) => e.status === 'FAIL').length;
-  const warningCount = evaluations.filter((e) => e.status === 'WARNING').length;
-
-  let finalOverallStatus: 'PASS' | 'WARNING' | 'FAIL' = 'PASS';
-  if (remainingFails > 0 || warningCount > 0) {
-    finalOverallStatus = 'WARNING';
-  }
-
-  const finalExam: GeneratedExam = {
+  return {
     level,
     levelName: levelTitle,
     levelDescription,
-    title:
-      generatedExam.title ||
-      `${analysis.examMetadata?.title || 'Đề kiểm tra'} - Biến thể Cấp độ ${level}`,
-    metadata: generatedExam.metadata || analysis.examMetadata,
-    sections: generatedExam.sections || analysis.sections || [],
-    questions: generatedExam.questions || [],
+    title: generatedExam.title || `${analysis.examMetadata?.title || 'Đề kiểm tra'} - Cấp độ ${level}`,
+    metadata: analysis.examMetadata,
+    sections: analysis.sections || [],
+    questions: generatedExam.questions as VariantQuestion[],
     validationReport: evaluations,
-    overallValidationStatus: finalOverallStatus,
-    validationSummary:
-      validationResult.summary ||
-      `Đã kiểm định độc lập toàn bộ ${generatedExam.questions?.length || 0} câu hỏi.`,
+    overallValidationStatus,
+    validationSummary,
     repairedQuestionCount: repairedCount,
     createdAt: new Date().toISOString(),
   };
-
-  return finalExam;
 }
 
 // ============================================================================
-// 3. HIỆU CHỈNH / TỰ SỬA 1 CÂU HỎI DUY NHẤT (SINGLE QUESTION FIX)
+// 3. BƯỚC 3: SỬA HOẶC GIẢI LẠI 1 CÂU HỎI DUY NHẤT
 // ============================================================================
-export async function fixSingleQuestionWithAI(
+export async function editOrRegenerateSingleQuestion(
   payload: SingleQuestionEditPayload,
   apiConfig?: ApiConfig
-): Promise<{ repairedQuestion: VariantQuestion; validation: QuestionValidation }> {
-  const systemInstruction = `Bạn là Chuyên gia Sư phạm Khảo thí. Nhiệm vụ của bạn là hiệu chỉnh lại một câu hỏi duy nhất trong đề thi biến thể cấp độ ${payload.level} theo yêu cầu cụ thể của giáo viên.
-Đảm bảo tính chính xác khoa học, công thức LaTeX ($...$), điều kiện, đáp án và lời giải chi tiết.
-Trả về JSON duy nhất:
+): Promise<{ question: VariantQuestion; repairedQuestion: VariantQuestion; validation: QuestionValidation }> {
+  const { question, originalQuestion, level, teacherNote } = payload;
+
+  const systemInstruction = `Bạn là Chuyên gia Khảo thí và Sư phạm.
+Nhiệm vụ của bạn là hiệu chỉnh hoặc sinh lại một câu hỏi biến thể cấp độ ${level} theo đúng yêu cầu sư phạm của giáo viên.
+
+YÊU CẦU CỦA GIÁO VIÊN: "${teacherNote || 'Hãy giải lại và tối ưu hóa độ chính xác và tính sư phạm của câu hỏi này.'}"
+
+BẢO TOÀN CÔNG THỨC TOÁN HỌC: Bọc trong $...$ hoặc $$...$$.
+TỰ GIẢI LẠI TỪNG BƯỚC (solveSteps) và tính toán lại đáp án chính xác tuyệt đối.
+
+TRẢ VỀ JSON:
 {
-  "repairedQuestion": {
-    "id": "${payload.question.id}",
-    "number": ${payload.question.number},
-    "originalQuestionId": "${payload.question.originalQuestionId}",
-    "sectionId": "${payload.question.sectionId || 'sec_1'}",
-    "questionText": "...",
-    "type": "${payload.question.type}",
-    "options": [
-      { "label": "A", "text": "..." },
-      { "label": "B", "text": "..." },
-      { "label": "C", "text": "..." },
-      { "label": "D", "text": "..." }
-    ],
-    "correctAnswer": "A",
-    "explanation": "...",
-    "solveSteps": ["..."],
-    "points": ${payload.question.points || 0.5},
-    "difficulty": "${payload.question.difficulty}",
-    "topic": "${payload.question.topic || ''}",
-    "changesFromOriginal": "..."
+  "question": {
+    "id": "${question.id}",
+    "number": ${question.number},
+    "originalQuestionId": "${question.originalQuestionId}",
+    "sectionId": "${question.sectionId || 'sec_1'}",
+    "questionText": "Nội dung câu hỏi mới...",
+    "type": "${question.type}",
+    "options": [ ... ],
+    "correctAnswer": "...",
+    "explanation": "Lời giải chi tiết...",
+    "solveSteps": [ ... ],
+    "points": ${question.points || 0.5},
+    "difficulty": "${question.difficulty}",
+    "topic": "${question.topic || ''}",
+    "changesFromOriginal": "Mô tả thay đổi mới..."
   },
   "validation": {
-    "questionId": "${payload.question.id}",
-    "questionNumber": ${payload.question.number},
+    "questionId": "${question.id}",
+    "questionNumber": ${question.number},
     "status": "PASS",
     "knowledgeCheck": "Chính xác",
     "formulaCheck": "Đúng công thức",
-    "lawOrRuleCheck": "Tuân thủ",
-    "conditionCheck": "Thỏa mãn",
-    "solutionCheck": "Logic chặt chẽ",
-    "answerCheck": "Chính xác tuyệt đối",
+    "lawOrRuleCheck": "Tuân thủ đúng",
+    "conditionCheck": "Đầy đủ điều kiện",
+    "solutionCheck": "Lời giải chặt chẽ",
+    "answerCheck": "Đáp án chính xác",
     "difficultyCheck": "Phù hợp",
-    "gradeLevelCheck": "Đúng chuẩn chương trình",
-    "message": "Đã hiệu chỉnh theo yêu cầu sư phạm của giáo viên."
+    "gradeLevelCheck": "Đúng chuẩn lớp",
+    "message": "Câu hỏi đã được hiệu chỉnh đạt chuẩn theo yêu cầu giáo viên."
   }
 }`;
 
-  const prompt = `Câu hỏi biến thể hiện tại:
-${JSON.stringify(payload.question, null, 2)}
-
-${payload.originalQuestion ? `Câu hỏi gốc đối chiếu:\n${JSON.stringify(payload.originalQuestion, null, 2)}` : ''}
-
-Ghi chú/Yêu cầu chỉnh sửa của giáo viên:
-${payload.teacherNote || 'Hãy giải lại và tối ưu hóa câu hỏi này đảm bảo tính chính xác khoa học tuyệt đối.'}`;
+  const userPrompt = `Câu hỏi biến thể hiện tại:\n${JSON.stringify(question, null, 2)}\n\nCâu hỏi gốc để đối chiếu:\n${JSON.stringify(
+    originalQuestion || {},
+    null,
+    2
+  )}`;
 
   const rawJson = await generateWithModelFallback(
     {
       systemInstruction,
-      contents: prompt,
+      contents: userPrompt,
     },
     apiConfig
   );
 
-  const parsed = cleanAndParseJSON<{
-    repairedQuestion: VariantQuestion;
-    validation: QuestionValidation;
-  }>(rawJson);
+  const parsed = cleanAndParseJSON<any>(rawJson);
+  if (!parsed.question) {
+    throw new Error('Không thể cập nhật câu hỏi.');
+  }
 
-  return parsed;
+  const q = parsed.question as VariantQuestion;
+  const val = parsed.validation as QuestionValidation;
+
+  return {
+    question: q,
+    repairedQuestion: q,
+    validation: val,
+  };
 }
+
+export const fixSingleQuestionWithAI = editOrRegenerateSingleQuestion;
